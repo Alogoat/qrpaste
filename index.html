@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="cs" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
+    <title>QRPaste - Rychlé sdílení pro školy</title>
+    <meta name="description" content="Jednoduchá aplikace pro rychlé sdílení textu, kódu a screenshotů mezi studenty a učiteli">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+   
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+   
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+   
+    <!-- QR Code Generator CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+   
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        },
+                        success: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d'
+                        },
+                        error: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d'
+                        },
+                        warning: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f'
+                        }
+                    },
+                    fontSize: {
+                        '2xs': ['0.625rem', { lineHeight: '0.75rem' }],
+                    },
+                    spacing: {
+                        '18': '4.5rem',
+                        '88': '22rem',
+                    },
+                    boxShadow: {
+                        'focus': '0 0 0 3px rgba(37, 99, 235, 0.1)',
+                        'focus-error': '0 0 0 3px rgba(239, 68, 68, 0.1)',
+                        'focus-success': '0 0 0 3px rgba(34, 197, 94, 0.1)',
+                    },
+                    minHeight: {
+                        'touch': '44px',
+                    },
+                    minWidth: {
+                        'touch': '44px',
+                    }
+                }
+            }
+        }
+    </script>
+   
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='10' width='70' height='85' rx='8' fill='%231e3a8a'/><rect x='18' y='13' width='64' height='79' rx='5' fill='white'/><rect x='35' y='5' width='30' height='15' rx='7' fill='%231e3a8a'/><circle cx='50' cy='12.5' r='4' fill='white'/><g transform='translate(25,25)'><rect x='2' y='2' width='12' height='12' fill='%231e3a8a'/><rect x='5' y='5' width='6' height='6' fill='white'/><rect x='36' y='2' width='12' height='12' fill='%231e3a8a'/><rect x='39' y='5' width='6' height='6' fill='white'/><rect x='2' y='36' width='12' height='12' fill='%231e3a8a'/><rect x='5' y='39' width='6' height='6' fill='white'/><rect x='18' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='22' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='26' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='30' y='4' width='2' height='2' fill='%231e3a8a'/></g></svg>">
+    
+    <!-- Custom CSS for enhanced UX -->
+    <style>
+        /* Touch-friendly optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .hover\\:bg-gray-50:hover {
+                background-color: #f9fafb !important;
+            }
+            .hover\\:bg-primary-700:hover {
+                background-color: #1d4ed8 !important;
+            }
+            .hover\\:bg-success-700:hover {
+                background-color: #15803d !important;
+            }
+            .hover\\:bg-error-700:hover {
+                background-color: #b91c1c !important;
+            }
+        }
+        
+        /* Enhanced focus indicators */
+        .focus-enhanced:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+            border-color: #2563eb;
+        }
+        
+        .focus-enhanced-success:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+            border-color: #16a34a;
+        }
+        
+        .focus-enhanced-error:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+            border-color: #dc2626;
+        }
+        
+        /* Loading states */
+        .loading-button {
+            position: relative;
+            color: transparent !important;
+        }
+        
+        .loading-button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            color: white;
+        }
+        
+        .loading-overlay {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+        }
+        
+        /* Improved transitions */
+        .smooth-transition {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .scale-press:active {
+            transform: scale(0.98);
+        }
+        
+        /* Error states */
+        .error-input {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+        }
+        
+        .error-input:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+        
+        /* Success states */
+        .success-input {
+            border-color: #16a34a;
+            background-color: #f0fdf4;
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .border-gray-300 {
+                border-color: #000 !important;
+            }
+            .text-gray-500 {
+                color: #000 !important;
+            }
+            .text-gray-700 {
+                color: #000 !important;
+            }
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+            }
+            .shadow-sm, .shadow-lg {
+                box-shadow: none !important;
+            }
+        }
+        
+        /* Loading animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Toast animations */
+        @keyframes slide-in-right {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slide-out-right {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .toast-enter {
+            animation: slide-in-right 0.3s ease-out;
+        }
+        
+        .toast-leave {
+            animation: slide-out-right 0.2s ease-in;
+        }
+        
+        /* Keyboard navigation improvements */
+        .keyboard-focus:focus-visible {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+        }
+        
+        /* Skip link enhancement */
+        .skip-link:focus {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        /* Mobile-first responsive design helpers */
+        .touch-manipulation {
+            touch-action: manipulation;
+        }
+        
+        /* Improved button styling for accessibility */
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        button:disabled:hover {
+            background-color: inherit !important;
+            border-color: inherit !important;
+            color: inherit !important;
+            transform: none !important;
+        }
+        
+        /* Specific fix for disabled primary buttons */
+        .bg-primary-600:disabled:hover {
+            background-color: #2563eb !important;
+            border-color: transparent !important;
+            color: white !important;
+        }
+        
+        .bg-green-600:disabled:hover {
+            background-color: #16a34a !important;
+            border-color: transparent !important;
+            color: white !important;
+        }
+        
+        /* Prevent disabled buttons from changing appearance on hover */
+        button:disabled:hover,
+        button[disabled]:hover {
+            opacity: 0.6 !important;
+            cursor: not-allowed !important;
+        }
+        
+        /* Additional specific overrides for Tailwind classes */
+        .disabled\:opacity-50:disabled {
+            opacity: 0.5 !important;
+        }
+        
+        .disabled\:cursor-not-allowed:disabled {
+            cursor: not-allowed !important;
+        }
+        
+        /* Ensure disabled state visual consistency */
+        .bg-primary-600:disabled,
+        .bg-green-600:disabled,
+        .bg-blue-600:disabled {
+            opacity: 0.6 !important;
+        }
+        
+        .bg-primary-600:disabled:hover,
+        .bg-green-600:disabled:hover,
+        .bg-blue-600:disabled:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Better visual hierarchy */
+        .section-header {
+            border-left: 4px solid #2563eb;
+            padding-left: 1rem;
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .auto-dark {
+                background-color: #1f2937;
+                color: #f9fafb;
+            }
+            
+            .auto-dark .bg-white {
+                background-color: #374151 !important;
+            }
+            
+            .auto-dark .text-gray-900 {
+                color: #f9fafb !important;
+            }
+            
+            .auto-dark .border-gray-200 {
+                border-color: #4b5563 !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="h-full bg-gray-50 font-sans touch-manipulation" x-data="qrPasteApp()" x-init="init()">
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" 
+       class="skip-link sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-600 text-white px-4 py-2 rounded-md z-50 text-sm font-medium smooth-transition"
+       tabindex="1">
+        Přejít na hlavní obsah
+    </a>
+
+    <!-- Loading overlay -->
+    <div x-show="loading" 
+         class="loading-overlay fixed inset-0 flex items-center justify-center z-50" 
+         x-cloak
+         role="status" 
+         aria-label="Načítání"
+         aria-live="polite">
+        <div class="bg-white rounded-lg p-6 shadow-lg">
+            <div class="flex items-center space-x-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600" aria-hidden="true"></div>
+                <span class="text-gray-700 font-medium">Zpracovávám...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live region for announcements -->
+    <div aria-live="polite" aria-atomic="true" class="sr-only" id="live-region">
+        <span x-text="liveMessage"></span>
+    </div>
+
+
+    <!-- Main Container -->
+    <div class="min-h-full flex flex-col max-w-4xl mx-auto bg-white sm:bg-gray-50">
+       
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 px-3 sm:px-6 lg:px-8 sticky top-0 z-40" role="banner">
+            <div class="flex items-center justify-between h-14 sm:h-16">
+                <!-- Logo and Title -->
+                <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                    <div class="flex-shrink-0" role="img" aria-label="QRPaste logo">
+                        <svg class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Background clipboard -->
+                            <rect x="15" y="10" width="70" height="85" rx="8" ry="8" fill="#1e3a8a" stroke="#1e3a8a" stroke-width="2"/>
+                            <rect x="18" y="13" width="64" height="79" rx="5" ry="5" fill="white"/>
+                            
+                            <!-- Clipboard clip -->
+                            <rect x="35" y="5" width="30" height="15" rx="7" ry="7" fill="#1e3a8a"/>
+                            <circle cx="50" cy="12.5" r="4" fill="white"/>
+                            
+                            <!-- QR Code pattern -->
+                            <g transform="translate(25, 25)">
+                                <!-- Corner squares -->
+                                <rect x="2" y="2" width="12" height="12" fill="#1e3a8a"/>
+                                <rect x="5" y="5" width="6" height="6" fill="white"/>
+                                
+                                <rect x="36" y="2" width="12" height="12" fill="#1e3a8a"/>
+                                <rect x="39" y="5" width="6" height="6" fill="white"/>
+                                
+                                <rect x="2" y="36" width="12" height="12" fill="#1e3a8a"/>
+                                <rect x="5" y="39" width="6" height="6" fill="white"/>
+                                
+                                <!-- Data dots -->
+                                <rect x="18" y="4" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="22" y="4" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="26" y="4" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="30" y="4" width="2" height="2" fill="#1e3a8a"/>
+                                
+                                <rect x="4" y="18" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="8" y="18" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="12" y="18" width="2" height="2" fill="#1e3a8a"/>
+                                
+                                <rect x="18" y="18" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="22" y="18" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="26" y="18" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="30" y="18" width="2" height="2" fill="#1e3a8a"/>
+                                
+                                <rect x="18" y="22" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="26" y="22" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="30" y="22" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="34" y="22" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="38" y="22" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="42" y="22" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="46" y="22" width="2" height="2" fill="#1e3a8a"/>
+                                
+                                <rect x="18" y="26" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="22" y="26" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="30" y="26" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="34" y="26" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="42" y="26" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="46" y="26" width="2" height="2" fill="#1e3a8a"/>
+                                
+                                <rect x="18" y="30" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="26" y="30" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="34" y="30" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="38" y="30" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="46" y="30" width="2" height="2" fill="#1e3a8a"/>
+                                
+                                <rect x="4" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="8" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="18" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="22" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="26" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="30" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="34" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="38" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="42" y="42" width="2" height="2" fill="#1e3a8a"/>
+                                <rect x="46" y="42" width="2" height="2" fill="#1e3a8a"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">QRPaste</h1>
+                        <p class="text-2xs sm:text-xs text-gray-500 hidden sm:block">Rychlé sdílení pro školy</p>
+                    </div>
+                </div>
+               
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <!-- TV Mode Button (global) -->
+                    <button
+                        @click="toggleTVMode"
+                        :disabled="!displayedContent"
+                        class="inline-flex items-center px-2 sm:px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press disabled:opacity-50 disabled:cursor-not-allowed"
+                        :class="displayedContent ? 'hover:bg-primary-50 hover:border-primary-300' : ''"
+                        aria-label="Přepnout do TV režimu na celou obrazovku"
+                        type="button"
+                    >
+                        <svg class="h-4 w-4 sm:mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="hidden sm:inline">TV</span>
+                    </button>
+
+                    <!-- Help Button -->
+                    <button
+                        @click="showHelp = !showHelp"
+                        :aria-expanded="showHelp"
+                        class="inline-flex items-center px-2 sm:px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press"
+                        aria-label="Zobrazit nebo skrýt nápovědu"
+                        type="button"
+                    >
+                        <svg class="h-4 w-4 sm:mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="hidden sm:inline">Nápověda</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Help Panel -->
+            <div x-show="showHelp" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 transform -translate-y-1"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                 x-transition:leave-end="opacity-0 transform -translate-y-1"
+                 class="pb-3 sm:pb-4" 
+                 x-cloak
+                 role="region"
+                 aria-labelledby="help-title">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-3 sm:mt-4">
+                    <h3 id="help-title" class="text-sm font-medium text-blue-900 mb-2">Jak používat QRPaste:</h3>
+                    <ul class="text-xs sm:text-sm text-blue-700 space-y-1" role="list">
+                        <li>• <strong>URL režim:</strong> Kratší texty zakódované do URL (funguje offline)</li>
+                        <li>• <strong>Databázový režim:</strong> Větší soubory uložené na server</li>
+                        <li>• Vložte text nebo nahrajte obrázek</li>
+                        <li>• Sdílejte pomocí QR kódu nebo krátké URL nebo kódu</li>
+                        <li>• <strong>TV režim:</strong> Tlačítko TV pro zobrazení na celou obrazovku</li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6" role="main">
+           
+            <!-- Input Section -->
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" 
+                     aria-labelledby="input-section"
+                     role="region">
+                <h2 id="input-section" class="section-header text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Obsah pro sdílení</h2>
+                <!-- Text Input -->
+                <div class="space-y-3 sm:space-y-4">
+                    <div class="form-field">
+                        <label for="content-textarea" class="block text-sm font-medium text-gray-700 mb-2">
+                            Text nebo kód
+                        </label>
+                        <textarea
+                            id="content-textarea"
+                            x-model="content"
+                            placeholder="Vložte text, kód, odkaz nebo poznámky..."
+                            class="w-full h-28 sm:h-32 lg:h-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus-enhanced smooth-transition resize-none text-sm sm:text-base"
+                            aria-describedby="content-help"
+                            rows="4"
+                        ></textarea>
+                        <p id="content-help" class="mt-1 text-xs text-gray-500">
+                            Podporované: text, kód, odkazy, poznámky
+                        </p>
+                    </div>
+                   
+                    <!-- File Upload and Camera -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2" id="image-section-label">
+                            Obrázek nebo fotka
+                        </label>
+                       
+                        <!-- Action buttons for image -->
+                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 mb-3 sm:mb-4" role="group" aria-labelledby="image-section-label">
+                            <button
+                                @click="openCamera"
+                                class="inline-flex items-center justify-center px-3 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch scale-press touch-manipulation"
+                                aria-label="Vyfotit novou fotku pomocí kamery"
+                                type="button"
+                            >
+                                <svg class="h-4 w-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="truncate">Vyfotit</span>
+                            </button>
+                           
+                            <label class="inline-flex items-center justify-center px-3 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition cursor-pointer min-h-touch scale-press touch-manipulation">
+                                <svg class="h-4 w-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <span class="truncate">Nahrát</span>
+                                <input
+                                    id="file-upload"
+                                    name="file-upload"
+                                    type="file"
+                                    class="sr-only"
+                                    accept="image/*,.jpg,.jpeg,.png,.gif,.webp"
+                                    @change="handleFileUpload"
+                                    aria-describedby="file-upload-help"
+                                >
+                            </label>
+                           
+                            <button
+                                @click="pasteFromClipboard"
+                                class="inline-flex items-center justify-center px-3 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch scale-press touch-manipulation"
+                                aria-label="Vložit obrázek ze schránky"
+                                type="button"
+                            >
+                                <svg class="h-4 w-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <span class="truncate">Vložit</span>
+                            </button>
+                        </div>
+                       
+                        <!-- Drag & Drop Area -->
+                        <div 
+                            class="flex justify-center px-4 py-6 sm:px-6 sm:py-8 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400 smooth-transition touch-manipulation"
+                            @drop="handleDrop($event)"
+                            @dragover.prevent
+                            @dragenter.prevent
+                            role="button"
+                            tabindex="0"
+                            aria-label="Oblast pre pretaženie obrázkov"
+                            @keydown.enter="$refs.fileInput?.click()"
+                            @keydown.space.prevent="$refs.fileInput?.click()"
+                        >
+                            <div class="space-y-2 text-center">
+                                <svg class="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="text-sm text-gray-600">Přetáhněte obrázek sem nebo použijte tlačítka výše</p>
+                                <p id="file-upload-help" class="text-xs text-gray-500">PNG, JPG, GIF do 10MB</p>
+                            </div>
+                        </div>
+                       
+                        <!-- Image Preview -->
+                        <div x-show="selectedFile || capturedImage" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             class="mt-3 sm:mt-4">
+                            <div class="relative inline-block">
+                                <img
+                                    :src="selectedFile || capturedImage"
+                                    alt="Náhled nahraného obrázku"
+                                    class="max-w-full h-auto max-h-40 sm:max-h-48 rounded-lg border border-gray-200 shadow-sm"
+                                    loading="lazy"
+                                >
+                                <button
+                                    @click="removeImage"
+                                    class="absolute -top-2 -right-2 bg-error-500 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-error-600 focus-enhanced-error smooth-transition min-h-touch min-w-touch sm:min-h-[32px] sm:min-w-[32px] scale-press"
+                                    aria-label="Odstranit náhled obrázku"
+                                    type="button"
+                                >
+                                    <svg class="h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Mode Switch -->
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" aria-labelledby="mode-section">
+                <h2 id="mode-section" class="section-header text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Režim sdílení</h2>
+               
+                <fieldset class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <legend class="sr-only">Výběr režimu sdílení</legend>
+                    
+                    <!-- URL Mode -->
+                    <label class="relative flex cursor-pointer rounded-lg border p-3 sm:p-4 focus-within:ring-2 focus-within:ring-primary-500 touch-manipulation" 
+                           :class="mode === 'url' ? 'border-primary-600 ring-2 ring-primary-600 bg-primary-50' : 'border-gray-300 hover:border-gray-400'">
+                        <input type="radio" name="sharing-mode" x-model="mode" value="url" class="sr-only" aria-describedby="url-mode-description">
+                        <div class="flex flex-col flex-1">
+                            <div class="flex items-start">
+                                <div class="text-sm">
+                                    <div class="font-medium text-gray-900 flex items-center mb-1">
+                                        <svg class="h-5 w-5 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        URL režim
+                                    </div>
+                                    <div id="url-mode-description" class="text-gray-500">
+                                        <p class="text-xs mt-1">Rychlý • Offline • Kratší texty</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                   
+                    <!-- Database Mode -->
+                    <label class="relative flex cursor-pointer rounded-lg border p-3 sm:p-4 focus-within:ring-2 focus-within:ring-primary-500 touch-manipulation" 
+                           :class="mode === 'database' ? 'border-primary-600 ring-2 ring-primary-600 bg-primary-50' : 'border-gray-300 hover:border-gray-400'">
+                        <input type="radio" name="sharing-mode" x-model="mode" value="database" class="sr-only" aria-describedby="database-mode-description">
+                        <div class="flex flex-col flex-1">
+                            <div class="flex items-start">
+                                <div class="text-sm">
+                                    <div class="font-medium text-gray-900 flex items-center mb-1">
+                                        <svg class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                                        </svg>
+                                        Databázový režim
+                                    </div>
+                                    <div id="database-mode-description" class="text-gray-500">
+                                        <p class="text-xs mt-1">Větší soubory • Server • Bezpečnější</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </fieldset>
+            </section>
+
+
+            <!-- Action Buttons -->
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex flex-col gap-3">
+                    <button
+                        @click="generateShare"
+                        :disabled="!content.trim() && !selectedFile && !capturedImage"
+                        class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-600 transition-colors min-h-touch touch-manipulation"
+                        aria-describedby="generate-help"
+                    >
+                        <svg class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Vygenerovat QR , URL a kód
+                    </button>
+                    
+                    <button
+                        @click="clearAll"
+                        class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors min-h-touch touch-manipulation btn-clear">
+                        <svg class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Vymazat vše
+                    </button>
+                    </button>
+                </div>
+                <p id="generate-help" class="text-xs text-gray-500 mt-2">Vložte text, nahrajte nebo vyfotografujte obrázek pro vygenerování QR kódu, URL a kódu</p>
+            </section>
+
+
+            <!-- Output Section -->
+            <section x-show="generatedUrl" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" aria-labelledby="output-section">
+                <h2 id="output-section" class="text-lg font-semibold text-gray-900 mb-4">Sdílení</h2>
+               
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- QR Code -->
+                    <div class="text-center">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">QR kód</h3>
+                        <div class="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
+                            <canvas id="qr-canvas" class="max-w-full h-auto"></canvas>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Naskenujte kamerou telefonu</p>
+                    </div>
+                   
+                    <!-- Share URL -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Krátká URL</h3>
+                        <div class="space-y-3">
+                            <div class="flex">
+                                <input
+                                    type="text"
+                                    :value="generatedUrl"
+                                    readonly
+                                    class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-l-md text-sm focus:outline-none"
+                                    aria-label="Vygenerovaná URL"
+                                >
+                                <button
+                                    @click="copyToClipboard(generatedUrl)"
+                                    class="px-4 py-2 bg-primary-600 text-white border border-primary-600 rounded-r-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                                    aria-label="Kopírovat URL"
+                                >
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                           
+                            <!-- Share Code -->
+                            <div x-show="shareCode" class="mt-3">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Kód pro sdílení</label>
+                                <div class="flex">
+                                    <input
+                                        type="text"
+                                        :value="shareCode"
+                                        readonly
+                                        class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-l-md text-lg font-mono text-center focus:outline-none"
+                                        aria-label="Kód pro sdílení"
+                                    >
+                                    <button
+                                        @click="copyToClipboard(shareCode)"
+                                        class="px-4 py-2 bg-green-600 text-white border border-green-600 rounded-r-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+                                        aria-label="Kopírovat kód"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Řekněte tento kód nahlas nebo ho napište na tabuli</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Display Section (View by Code) -->
+            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" aria-labelledby="display-section">
+                <h2 id="display-section" class="text-lg font-semibold text-gray-900 mb-4">Zobrazit obsah podle kódu</h2>
+               
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input
+                        type="text"
+                        x-model="viewCode"
+                        placeholder="Zadejte kód (např. ABC123)"
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 uppercase"
+                        aria-label="Kód pro zobrazení obsahu"
+                    >
+                    <button
+                        @click="viewByCode"
+                        :disabled="!viewCode.trim()"
+                        class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 transition-colors min-h-touch"
+                    >
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Zobrazit
+                    </button>
+                </div>
+            </section>
+
+
+            <!-- Displayed Content -->
+            <section x-show="displayedContent" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" aria-labelledby="content-display">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 id="content-display" class="text-lg font-semibold text-gray-900">Zobrazený obsah</h2>
+                   
+                    <!-- TV Mode Button -->
+                    <button
+                        @click="toggleTVMode"
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                        aria-label="Přepnout TV režim"
+                    >
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        TV režim
+                    </button>
+                </div>
+               
+                <!-- Content Display Area -->
+                <div class="bg-gray-50 rounded-lg p-4 min-h-[200px]">
+                    <div x-show="displayedContent.type === 'text'" class="prose max-w-none">
+                        <pre x-text="displayedContent.content" class="whitespace-pre-wrap font-mono text-sm"></pre>
+                    </div>
+                   
+                    <div x-show="displayedContent.type === 'image'" class="text-center">
+                        <img :src="displayedContent.content" alt="Sdílený obrázek" class="max-w-full h-auto rounded-lg mx-auto">
+                    </div>
+                </div>
+            </section>
+        </main>
+
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+            <div class="text-center text-sm text-gray-500">
+                <p>QRPaste &copy; 2025 - Rychlé sdílení pro školy</p>
+                <p class="mt-1">Mobile-friendly • Bez registrace • Open source</p>
+            </div>
+        </footer>
+    </div>
+
+
+    <!-- Camera Modal -->
+    <div
+        x-show="cameraMode"
+        x-transition
+        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+        @keydown.escape="closeCameraModal"
+        x-cloak
+    >
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Vyfotit obrázek</h3>
+                <button
+                    @click="closeCameraModal"
+                    class="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    aria-label="Zavřít kameru"
+                >
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+           
+            <!-- Camera Video -->
+            <div class="relative mb-4">
+                <video
+                    x-ref="cameraVideo"
+                    autoplay
+                    playsinline
+                    class="w-full h-64 bg-gray-900 rounded-lg object-cover"
+                ></video>
+               
+                <!-- Camera not available message -->
+                <div x-show="!cameraAvailable" class="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                    <div class="text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-sm text-gray-600">Kamera není dostupná</p>
+                        <p class="text-xs text-gray-500 mt-1">Povolte přístup k kameře v prohlížeči</p>
+                    </div>
+                </div>
+            </div>
+           
+            <!-- Camera Controls -->
+            <div class="flex justify-center space-x-3">
+                <button
+                    @click="capturePhoto"
+                    :disabled="!cameraAvailable"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Vyfotit
+                </button>
+               
+                <button
+                    @click="closeCameraModal"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                >
+                    Zrušit
+                </button>
+            </div>
+           
+            <!-- Hidden canvas for photo capture -->
+            <canvas x-ref="cameraCanvas" class="hidden"></canvas>
+        </div>
+    </div>
+
+
+    <!-- TV Mode Modal/Fullscreen -->
+    <div
+        x-show="tvMode"
+        x-transition
+        class="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4"
+        @keydown.escape="tvMode = false"
+        x-cloak
+    >
+        <div class="w-full h-full flex flex-col items-center justify-center text-white">
+            <!-- Close Button -->
+            <button
+                @click="tvMode = false"
+                class="absolute top-4 right-4 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Zavřít TV režim"
+            >
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+           
+            <!-- TV Content -->
+            <div class="text-center max-w-4xl">
+                <div x-show="displayedContent.type === 'text'">
+                    <pre class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl whitespace-pre-wrap font-mono leading-relaxed" x-text="displayedContent.content"></pre>
+                </div>
+               
+                <div x-show="displayedContent.type === 'image'">
+                    <img :src="displayedContent.content" alt="Sdílený obrázek v TV režimu" class="max-w-full max-h-[80vh] mx-auto">
+                </div>
+            </div>
+           
+            <!-- Instructions -->
+            <p class="absolute bottom-4 text-gray-300 text-lg">Stiskněte ESC nebo klikněte × pro ukončení</p>
+        </div>
+    </div>
+
+
+    <!-- Toast/Notification -->
+    <div
+        x-show="toast.show"
+        x-transition
+        class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-40"
+        x-cloak
+    >
+        <p x-text="toast.message"></p>
+    </div>
+
+
+    <!-- Alpine.js App Data -->
+    <script>
+        function qrPasteApp() {
+            return {
+                // Data properties - inicializované pro Alpine.js
+                content: '',
+                selectedFile: null,
+                capturedImage: null,
+                mode: 'url',
+                showHelp: false,
+                generatedUrl: '',
+                shareCode: '',
+                viewCode: '',
+                displayedContent: null,
+                tvMode: false,
+                cameraMode: false,
+                cameraAvailable: false,
+                cameraStream: null,
+                loading: false,
+                liveMessage: '',
+                toast: {
+                    show: false,
+                    message: '',
+                    error: false
+                },
+
+                // Placeholder metody - připravené pro implementaci
+                handleFileUpload(event) {
+                    console.log('handleFileUpload called', event);
+                    // TODO: Implementovat logiku pro nahrávání souborů
+                },
+
+                handleDrop(event) {
+                    console.log('handleDrop called', event);
+                    // TODO: Implementovat drag & drop logiku
+                },
+
+                pasteFromClipboard() {
+                    console.log('pasteFromClipboard called');
+                    // TODO: Implementovat vkládání ze schránky
+                },
+
+                openCamera() {
+                    console.log('openCamera called');
+                    // TODO: Implementovat otevření kamery
+                },
+
+                capturePhoto() {
+                    console.log('capturePhoto called');
+                    // TODO: Implementovat focení
+                },
+
+                closeCameraModal() {
+                    console.log('closeCameraModal called');
+                    // TODO: Implementovat zavření kamery
+                },
+
+                removeImage() {
+                    console.log('removeImage called');
+                    // TODO: Implementovat odstranění obrázku
+                },
+
+                generateShare() {
+                    console.log('generateShare called');
+                    // TODO: Implementovat generování sdílení
+                },
+
+                generateRandomCode() {
+                    console.log('generateRandomCode called');
+                    // TODO: Implementovat generování náhodného kódu
+                    return 'ABC123';
+                },
+
+                generateQRCode(url) {
+                    console.log('generateQRCode called', url);
+                    // TODO: Implementovat generování QR kódu
+                },
+
+                clearAll() {
+                    console.log('clearAll called');
+                    // TODO: Implementovat vymazání všeho
+                },
+
+                viewByCode() {
+                    console.log('viewByCode called');
+                    // TODO: Implementovat zobrazení podle kódu
+                },
+
+                toggleTVMode() {
+                    console.log('toggleTVMode called');
+                    // TODO: Implementovat přepínání TV režimu
+                },
+
+                requestFullscreen() {
+                    console.log('requestFullscreen called');
+                    // TODO: Implementovat fullscreen režim
+                },
+
+                exitFullscreen() {
+                    console.log('exitFullscreen called');
+                    // TODO: Implementovat ukončení fullscreen
+                },
+
+                copyToClipboard(text) {
+                    console.log('copyToClipboard called', text);
+                    // TODO: Implementovat kopírování do schránky
+                },
+
+                showToast(message, isError = false) {
+                    console.log('showToast called', message, isError);
+                    // TODO: Implementovat zobrazování notifikací
+                },
+
+                setLoading(state) {
+                    console.log('setLoading called', state);
+                    // TODO: Implementovat loading stavy
+                },
+
+                // Initialize app
+                init() {
+                    console.log('QRPaste app initialized - ready for implementation');
+                    // TODO: Implementovat inicializační logiku
+                }
+            }
+        }
+    </script>
+
+    <!-- Camera Modal -->
+    <div x-show="cameraMode" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+         @keydown.escape="closeCameraModal"
+         x-cloak
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="camera-modal-title">
+        <div class="bg-white rounded-lg max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="camera-modal-title" class="text-lg font-medium text-gray-900">Vyfotit obrázek</h3>
+                <button @click="closeCameraModal"
+                        class="text-gray-400 hover:text-gray-500 focus-enhanced rounded-md p-1 min-h-touch min-w-touch flex items-center justify-center scale-press"
+                        aria-label="Zavřít okno kamery"
+                        type="button">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Camera Video -->
+            <div class="relative mb-4">
+                <video x-ref="cameraVideo"
+                       autoplay 
+                       playsinline
+                       muted
+                       class="w-full h-48 sm:h-64 bg-gray-900 rounded-lg object-cover"
+                       aria-label="Náhled z kamery"></video>
+                
+                <!-- Camera not available message -->
+                <div x-show="!cameraAvailable" 
+                     class="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg"
+                     role="status"
+                     aria-live="polite">
+                    <div class="text-center p-4">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-sm text-gray-600">Kamera není dostupná</p>
+                        <p class="text-xs text-gray-500 mt-1">Povolte přístup k kameře v prohlížeči</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Camera Controls -->
+            <div class="flex justify-center space-x-3">
+                <button @click="capturePhoto"
+                        :disabled="!cameraAvailable"
+                        class="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus-enhanced smooth-transition min-h-touch scale-press"
+                        :class="cameraAvailable ? '' : 'opacity-50 cursor-not-allowed'"
+                        type="button">
+                    <svg class="h-4 w-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Vyfotit
+                </button>
+                
+                <button @click="closeCameraModal"
+                        class="inline-flex items-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch scale-press"
+                        type="button">
+                    Zrušit
+                </button>
+            </div>
+            
+            <!-- Hidden canvas for photo capture -->
+            <canvas x-ref="cameraCanvas" class="hidden" aria-hidden="true"></canvas>
+        </div>
+    </div>
+
+    <!-- Toast/Notification Component -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2 translate-x-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0 translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0 translate-x-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2 translate-x-2"
+         class="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-sm z-50" 
+         x-cloak
+         role="status"
+         aria-live="polite"
+         aria-atomic="true">
+        <div class="rounded-lg shadow-lg overflow-hidden"
+             :class="{
+                 'bg-success-600 text-white': !toast.error,
+                 'bg-error-600 text-white': toast.error
+             }">
+            <div class="p-4">
+                <div class="flex items-center">
+                    <!-- Success Icon -->
+                    <svg x-show="!toast.error" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <!-- Error Icon -->
+                    <svg x-show="toast.error" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <p x-text="toast.message" class="text-sm font-medium"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom CSS for better UX -->
+    <style>
+        [x-cloak] { display: none !important; }
+       
+        /* Enhanced button interactions for school environment */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            color: white;
+            background-color: #2563eb;
+            min-height: 44px;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            color: #374151;
+            background-color: white;
+            min-height: 44px;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f9fafb;
+        }
+        
+        .btn-success {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            color: white;
+            background-color: #16a34a;
+            min-height: 44px;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+        
+        .btn-danger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            color: white;
+            background-color: #dc2626;
+            min-height: 44px;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc0000;
+        }
+        
+        /* Clear button specific styling */
+        .btn-clear:hover {
+            background-color: #dc0000;
+            color: #ffffff;
+            border-color: #7c0000;
+        }
+        
+        /* Loading states for better UX feedback */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+        
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            color: white;
+        }
+        
+        /* High contrast mode for accessibility */
+        @media (prefers-contrast: high) {
+            .border-gray-300 {
+                border-color: #000 !important;
+                border-width: 2px !important;
+            }
+            .text-gray-500 {
+                color: #000 !important;
+            }
+            .text-gray-700 {
+                color: #000 !important;
+            }
+            .bg-gray-50 {
+                background-color: #f5f5f5 !important;
+            }
+        }
+        
+        /* Better error and success states */
+        .input-error {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+        }
+        
+        .input-error:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+        
+        .input-success {
+            border-color: #16a34a;
+            background-color: #f0fdf4;
+        }
+        
+        .input-success:focus {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+        
+        /* QR Code styling */
+        .qr-container {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 3px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* TV Mode optimizations for classroom display */
+        .tv-mode {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tv-mode .text-content {
+            font-size: clamp(1.5rem, 5vw, 4rem);
+            font-weight: 600;
+            letter-spacing: 0.025em;
+        }
+        
+        /* Improved drag and drop visual feedback */
+        .drag-over {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+            border-style: solid;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Better toast positioning and styling */
+        .toast-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        /* Mobile optimizations for school tablets */
+        @media (max-width: 640px) {
+            .prose pre {
+                font-size: 0.875rem;
+                padding: 0.75rem;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            
+            /* Larger touch targets for student use */
+            button, label[role="button"], .clickable {
+                min-height: 48px;
+                min-width: 48px;
+            }
+            
+            /* Better keyboard display on mobile */
+            input[type="text"], textarea {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            /* Enhanced mobile navigation */
+            .mobile-stack {
+                flex-direction: column;
+            }
+            
+            .mobile-full-width {
+                width: 100%;
+            }
+            
+            /* Better spacing on mobile */
+            .mobile-compact {
+                padding: 0.75rem;
+            }
+        }
+        
+        /* Tablet optimizations */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .tablet-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            /* Optimized for 10-13 inch tablets */
+            .tablet-touch {
+                min-height: 48px;
+                min-width: 48px;
+            }
+        }
+        
+        /* Better touch interactions */
+        @media (hover: none) {
+            .hover-none-bg:hover {
+                background-color: inherit !important;
+            }
+            
+            /* Enhanced tap feedback */
+            .tap-highlight {
+                -webkit-tap-highlight-color: rgba(37, 99, 235, 0.1);
+            }
+        }
+        
+        /* Improved accessibility for touch devices */
+        .touch-enhanced {
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .touch-enhanced input,
+        .touch-enhanced textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        
+        /* PWA and mobile app enhancements */
+        @media (display-mode: standalone) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+        
+        /* Better focus indicators for accessibility */
+        .focus-visible-enhanced:focus-visible {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Loading state improvements */
+        .loading-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Error and success states with better contrast */
+        .state-error {
+            background-color: #fef2f2;
+            border-color: #dc2626;
+            color: #991b1b;
+        }
+        
+        .state-success {
+            background-color: #f0fdf4;
+            border-color: #16a34a;
+            color: #15803d;
+        }
+        
+        .state-warning {
+            background-color: #fffbeb;
+            border-color: #d97706;
+            color: #92400e;
+        }
+        
+        /* Print styles for homework/notes */
+        @media print {
+            .no-print, button, .sticky, header, footer {
+                display: none !important;
+            }
+            
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            
+            .section-header {
+                border-left: 4px solid #000;
+                page-break-after: avoid;
+            }
+            
+            .content-display {
+                font-family: 'Times New Roman', serif;
+                font-size: 12pt;
+                line-height: 1.5;
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Reduced motion for sensitive users */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Focus management for keyboard navigation */
+        .focus-trap:focus-within {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+        }
+        
+        /* Better visual hierarchy for classroom settings */
+        .card-elevated {
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-elevated:hover {
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+        
+        /* Status indicators */
+        .status-online {
+            background-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        
+        .status-offline {
+            background-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Animation keyframes */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes bounce-in {
+            0% { transform: scale(0.3) translateY(-50px); opacity: 0; }
+            50% { transform: scale(1.05) translateY(-10px); }
+            70% { transform: scale(0.9) translateY(0); }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        
+        @keyframes slide-up {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Utility classes for dynamic styling */
+        .reveal {
+            animation: bounce-in 0.6s ease-out;
+        }
+        
+        .slide-up {
+            animation: slide-up 0.4s ease-out;
+        }
+    </style>
+</body>
+</html>
