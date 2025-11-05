@@ -480,12 +480,12 @@
                 <div class="flex items-center space-x-2">
                     <!-- TV Mode Button (global) -->
                     <button
+                        type="button"
                         @click="toggleTVMode"
                         :disabled="!displayedContent"
                         class="inline-flex items-center px-2 sm:px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press disabled:opacity-50 disabled:cursor-not-allowed"
                         :class="displayedContent ? 'hover:bg-primary-50 hover:border-primary-300' : ''"
                         aria-label="Přepnout do TV režimu na celou obrazovku"
-                        type="button"
                     >
                         <svg class="h-4 w-4 sm:mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -495,11 +495,11 @@
 
                     <!-- Help Button -->
                     <button
+                        type="button"
                         @click="showHelp = !showHelp"
                         :aria-expanded="showHelp"
                         class="inline-flex items-center px-2 sm:px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press"
                         aria-label="Zobrazit nebo skrýt nápovědu"
-                        type="button"
                     >
                         <svg class="h-4 w-4 sm:mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -570,10 +570,10 @@
                         <!-- Action buttons for image -->
                         <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 mb-3 sm:mb-4" role="group" aria-labelledby="image-section-label">
                             <button
+                                type="button"
                                 @click="openCamera"
                                 class="inline-flex items-center justify-center px-3 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch scale-press touch-manipulation"
                                 aria-label="Vyfotit novou fotku pomocí kamery"
-                                type="button"
                             >
                                 <svg class="h-4 w-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
@@ -599,10 +599,10 @@
                             </label>
                            
                             <button
+                                type="button"
                                 @click="pasteFromClipboard"
                                 class="inline-flex items-center justify-center px-3 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch scale-press touch-manipulation"
                                 aria-label="Vložit obrázek ze schránky"
-                                type="button"
                             >
                                 <svg class="h-4 w-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -646,10 +646,10 @@
                                     loading="lazy"
                                 >
                                 <button
+                                    type="button"
                                     @click="removeImage"
                                     class="absolute -top-2 -right-2 bg-error-500 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-error-600 focus-enhanced-error smooth-transition min-h-touch min-w-touch sm:min-h-[32px] sm:min-w-[32px] scale-press"
                                     aria-label="Odstranit náhled obrázku"
-                                    type="button"
                                 >
                                     <svg class="h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -718,6 +718,7 @@
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
                 <div class="flex flex-col gap-3">
                     <button
+                        type="button"
                         @click="generateShare"
                         :disabled="!content.trim() && !selectedFile && !capturedImage"
                         class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-600 transition-colors min-h-touch touch-manipulation"
@@ -730,13 +731,13 @@
                     </button>
                     
                     <button
+                        type="button"
                         @click="clearAll"
                         class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors min-h-touch touch-manipulation btn-clear">
                         <svg class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
                         Vymazat vše
-                    </button>
                     </button>
                 </div>
                 <p id="generate-help" class="text-xs text-gray-500 mt-2">Vložte text, nahrajte nebo vyfotografujte obrázek pro vygenerování QR kódu, URL a kódu</p>
@@ -770,6 +771,7 @@
                                     aria-label="Vygenerovaná URL"
                                 >
                                 <button
+                                    type="button"
                                     @click="copyToClipboard(generatedUrl)"
                                     class="px-4 py-2 bg-primary-600 text-white border border-primary-600 rounded-r-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
                                     aria-label="Kopírovat URL"
@@ -792,6 +794,7 @@
                                         aria-label="Kód pro sdílení"
                                     >
                                     <button
+                                        type="button"
                                         @click="copyToClipboard(shareCode)"
                                         class="px-4 py-2 bg-green-600 text-white border border-green-600 rounded-r-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
                                         aria-label="Kopírovat kód"
@@ -822,6 +825,7 @@
                         aria-label="Kód pro zobrazení obsahu"
                     >
                     <button
+                        type="button"
                         @click="viewByCode"
                         :disabled="!viewCode.trim()"
                         class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 transition-colors min-h-touch"
@@ -843,6 +847,7 @@
                    
                     <!-- TV Mode Button -->
                     <button
+                        type="button"
                         @click="toggleTVMode"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
                         aria-label="Přepnout TV režim"
@@ -960,6 +965,7 @@
         <div class="w-full h-full flex flex-col items-center justify-center text-white">
             <!-- Close Button -->
             <button
+                type="button"
                 @click="tvMode = false"
                 class="absolute top-4 right-4 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label="Zavřít TV režim"
@@ -1141,10 +1147,10 @@
         <div class="bg-white rounded-lg max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
                 <h3 id="camera-modal-title" class="text-lg font-medium text-gray-900">Vyfotit obrázek</h3>
-                <button @click="closeCameraModal"
+                <button type="button"
+                        @click="closeCameraModal"
                         class="text-gray-400 hover:text-gray-500 focus-enhanced rounded-md p-1 min-h-touch min-w-touch flex items-center justify-center scale-press"
-                        aria-label="Zavřít okno kamery"
-                        type="button">
+                        aria-label="Zavřít okno kamery">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -1177,11 +1183,11 @@
             
             <!-- Camera Controls -->
             <div class="flex justify-center space-x-3">
-                <button @click="capturePhoto"
+                <button type="button"
+                        @click="capturePhoto"
                         :disabled="!cameraAvailable"
                         class="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus-enhanced smooth-transition min-h-touch scale-press"
-                        :class="cameraAvailable ? '' : 'opacity-50 cursor-not-allowed'"
-                        type="button">
+                        :class="cameraAvailable ? '' : 'opacity-50 cursor-not-allowed'">
                     <svg class="h-4 w-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -1189,9 +1195,9 @@
                     Vyfotit
                 </button>
                 
-                <button @click="closeCameraModal"
-                        class="inline-flex items-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch scale-press"
-                        type="button">
+                <button type="button"
+                        @click="closeCameraModal"
+                        class="inline-flex items-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch scale-press">
                     Zrušit
                 </button>
             </div>
