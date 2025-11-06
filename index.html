@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
     <title>QRPaste - Rychlé sdílení pro školy</title>
 
+    <!-- Bezpečnostní meta tagy -->
     <meta name="description" content="Jednoduchá aplikace pro rychlé sdílení textu, kódu a screenshotů mezi studenty a učiteli">
+    <meta name="referrer" content="no-referrer">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- PWA meta tagy -->
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="QRPaste">
    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -559,10 +566,21 @@
                             class="w-full h-28 sm:h-32 lg:h-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus-enhanced smooth-transition resize-none text-sm sm:text-base"
                             aria-describedby="content-help"
                             rows="4"
+                            maxlength="50000"
+                            spellcheck="false"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
                         ></textarea>
-                        <p id="content-help" class="mt-1 text-xs text-gray-500">
-                            Podporované: text, kód, odkazy, poznámky
-                        </p>
+                        <div class="mt-1 flex justify-between items-center">
+                            <p id="content-help" class="text-xs text-gray-500">
+                                Podporované: text, kód, odkazy, poznámky
+                            </p>
+                            <p class="text-xs" 
+                               :class="content.length > 40000 ? 'text-red-600 font-medium' : content.length > 30000 ? 'text-yellow-600' : 'text-gray-400'">
+                                <span x-text="content.length.toLocaleString()"></span> / 50,000 znaků
+                            </p>
+                        </div>
                     </div>
                    
                     <!-- File Upload and Camera -->
@@ -1078,9 +1096,15 @@
                     error: false
                 },
                 
-                // URL Limits
+                // Bezpečnostní limity
                 MAX_URL_LENGTH: 2000,  // Bezpečný limit pro většinu prohlížečů
                 MAX_CONTENT_SIZE: 50000, // Max velikost obsahu před kompresí (50KB)
+                
+                // Rate limiting
+                _lastQRGeneration: 0,
+                _qrGenerationCount: 0,
+                QR_RATE_LIMIT: 5,      // Max 5 QR kódů
+                QR_RATE_WINDOW: 10000, // za 10 sekund
 
                 // ==============================================
                 // ENCODE/DECODE FUNKCE - URL-safe Base64
@@ -1363,41 +1387,186 @@
                 },
 
                 // ==============================================
+                // BEZPEČNOSTNÍ & VALIDAČNÍ FUNKCE
+                // ==============================================
+
+                /**
+                 * Validace názvu souboru (bezpečnostní kontrola)
+                 * Zabraňuje path traversal a nebezpečným znakům
+                 */
+                isValidFileName(fileName) {
+                    if (!fileName || typeof fileName !== 'string') {
+                        return false;
+                    }
+                    
+                    // Kontrola nebezpečných vzorů
+                    const dangerousPatterns = [
+                        /\.\./,           // Parent directory (..)
+                        /[<>:"|?*]/,      // Windows rezervované znaky
+                        /^\.+$/,          // Pouze tečky
+                        /[\x00-\x1F]/,    // Control znaky
+                        /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i  // Windows rezervovaná jména
+                    ];
+                    
+                    return !dangerousPatterns.some(pattern => pattern.test(fileName));
+                },
+
+                /**
+                 * Sanitizace textu (ochrana proti XSS)
+                 * Escapuje HTML znaky v uživatelském vstupu
+                 */
+                sanitizeText(text) {
+                    if (!text || typeof text !== 'string') {
+                        return '';
+                    }
+                    
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                },
+
+                /**
+                 * Reset file inputu
+                 */
+                resetFileInput() {
+                    const fileInput = document.getElementById('file-upload');
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                },
+
+                /**
+                 * Validace URL (základní kontrola)
+                 */
+                isValidUrl(url) {
+                    if (!url || typeof url !== 'string') {
+                        return false;
+                    }
+                    
+                    try {
+                        const parsed = new URL(url);
+                        // Povolit pouze http a https protokoly
+                        return ['http:', 'https:'].includes(parsed.protocol);
+                    } catch {
+                        return false;
+                    }
+                },
+
+                /**
+                 * Limitování velikosti textového obsahu
+                 */
+                validateContentSize(content) {
+                    if (!content || typeof content !== 'string') {
+                        return { valid: true, size: 0 };
+                    }
+                    
+                    const size = content.length;
+                    const sizeKB = (size / 1024).toFixed(1);
+                    
+                    if (size > this.MAX_CONTENT_SIZE) {
+                        return {
+                            valid: false,
+                            size: size,
+                            message: `Obsah je příliš velký (${sizeKB}KB). Maximum je ${(this.MAX_CONTENT_SIZE/1024).toFixed(0)}KB.`
+                        };
+                    }
+                    
+                    return { valid: true, size: size, sizeKB: sizeKB };
+                },
+
+                // ==============================================
                 // HLAVNÍ APLIKAČNÍ METODY
                 // ==============================================
 
                 /**
                  * Zpracování nahrání souboru
+                 * Bezpečná validace typu a velikosti souboru
                  */
                 handleFileUpload(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
+                    const file = event?.target?.files?.[0];
+                    if (!file) {
+                        console.warn('⚠️ Žádný soubor nebyl vybrán');
+                        return;
+                    }
+
+                    // Whitelist povolených MIME typů pro bezpečnost
+                    const ALLOWED_TYPES = [
+                        'image/jpeg',
+                        'image/jpg', 
+                        'image/png',
+                        'image/gif',
+                        'image/webp',
+                        'image/svg+xml'
+                    ];
 
                     // Validace typu souboru
-                    if (!file.type.startsWith('image/')) {
-                        this.showToast('Prosím nahrajte obrázek', true);
+                    if (!ALLOWED_TYPES.includes(file.type)) {
+                        console.error('❌ Nepovolený typ souboru:', file.type);
+                        this.showToast(`Nepodporovaný formát obrázku. Povolené: JPG, PNG, GIF, WebP`, true);
+                        this.resetFileInput();
                         return;
                     }
 
                     // Validace velikosti (max 10MB)
-                    if (file.size > 10 * 1024 * 1024) {
-                        this.showToast('Obrázek je příliš velký (max 10MB)', true);
+                    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+                    if (file.size > MAX_FILE_SIZE) {
+                        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                        console.error(`❌ Soubor příliš velký: ${sizeMB}MB`);
+                        this.showToast(`Obrázek je příliš velký (${sizeMB}MB). Maximum je 10MB.`, true);
+                        this.resetFileInput();
                         return;
                     }
 
+                    // Validace názvu souboru (základní sanitizace)
+                    if (!this.isValidFileName(file.name)) {
+                        console.error('❌ Neplatný název souboru:', file.name);
+                        this.showToast('Název souboru obsahuje nepovolené znaky', true);
+                        this.resetFileInput();
+                        return;
+                    }
+
+                    console.log(`✅ Validace OK: ${file.name} (${(file.size/1024).toFixed(1)}KB)`);
                     this.setLoading(true);
                     
                     const reader = new FileReader();
+                    
                     reader.onload = (e) => {
-                        this.selectedFile = e.target.result;
+                        // Validace dat URL formátu
+                        const result = e.target.result;
+                        if (!result || !result.startsWith('data:image/')) {
+                            console.error('❌ Neplatný data URL formát');
+                            this.showToast('Chyba při načítání obrázku - neplatný formát', true);
+                            this.setLoading(false);
+                            this.resetFileInput();
+                            return;
+                        }
+                        
+                        this.selectedFile = result;
                         this.setLoading(false);
-                        this.showToast('Obrázek nahrán úspěšně');
+                        this.showToast(`✅ Obrázek nahrán (${(file.size/1024).toFixed(1)}KB)`);
                     };
-                    reader.onerror = () => {
+                    
+                    reader.onerror = (error) => {
+                        console.error('❌ FileReader error:', error);
                         this.setLoading(false);
                         this.showToast('Chyba při načítání obrázku', true);
+                        this.resetFileInput();
                     };
+                    
+                    // Časový limit pro čtení souboru (30 sekund)
+                    const readTimeout = setTimeout(() => {
+                        reader.abort();
+                        this.setLoading(false);
+                        this.showToast('Načítání souboru trvalo příliš dlouho', true);
+                        this.resetFileInput();
+                    }, 30000);
+                    
                     reader.readAsDataURL(file);
+                    
+                    // Zrušit timeout po úspěšném načtení
+                    reader.onloadend = () => {
+                        clearTimeout(readTimeout);
+                    };
                 },
 
                 /**
@@ -1512,12 +1681,11 @@
 
                 /**
                  * Generování sdílení (URL režim)
+                 * Bezpečná validace a zpracování obsahu
                  */
                 generateShare() {
                     console.log('🚀 generateShare() volána');
                     console.log('Mode:', this.mode);
-                    console.log('Content:', this.content.substring(0, 50));
-                    console.log('Selected file:', !!this.selectedFile);
                     
                     this.setLoading(true);
 
@@ -1526,6 +1694,17 @@
                             // URL režim - zakódování do URL hash
                             if (this.content.trim()) {
                                 console.log('📝 Generuji sdílení pro text...');
+                                
+                                // Validace velikosti obsahu
+                                const validation = this.validateContentSize(this.content);
+                                if (!validation.valid) {
+                                    console.error('❌ Obsah příliš velký:', validation.message);
+                                    this.showToast(validation.message, true);
+                                    this.setLoading(false);
+                                    return;
+                                }
+                                
+                                console.log(`✓ Velikost obsahu: ${validation.sizeKB}KB`);
                                 
                                 // Text obsah - pokus o zakódování do URL
                                 const success = this.updateUrlHash(this.content, 'text');
@@ -1625,6 +1804,22 @@
                 generateQRCode(url) {
                     console.log('🔍 generateQRCode volána s URL:', url);
                     
+                    // Rate limiting - ochrana proti spamu
+                    const now = Date.now();
+                    if (now - this._lastQRGeneration < this.QR_RATE_WINDOW) {
+                        this._qrGenerationCount++;
+                        if (this._qrGenerationCount > this.QR_RATE_LIMIT) {
+                            console.warn('⚠️ Rate limit překročen pro generování QR kódů');
+                            this.showToast('Příliš mnoho požadavků. Počkejte chvíli.', true);
+                            return;
+                        }
+                    } else {
+                        // Reset počítadla po uplynutí časového okna
+                        this._qrGenerationCount = 1;
+                    }
+                    this._lastQRGeneration = now;
+                    
+                    // Validace canvas elementu
                     const canvas = document.getElementById('qr-canvas');
                     if (!canvas) {
                         console.error('❌ QR canvas element nenalezen!');
@@ -1634,9 +1829,17 @@
                     
                     console.log('✓ Canvas nalezen:', canvas);
                     
-                    // Validace URL
-                    if (!url || url.trim() === '') {
-                        console.warn('⚠️ Prázdná URL pro QR kód');
+                    // Validace URL (bezpečnostní kontrola)
+                    if (!url || typeof url !== 'string' || url.trim() === '') {
+                        console.warn('⚠️ Neplatná URL pro QR kód');
+                        return;
+                    }
+                    
+                    // Kontrola maximální délky URL pro QR kód
+                    const MAX_QR_URL_LENGTH = 4296; // Standard QR limit pro Version 40
+                    if (url.length > MAX_QR_URL_LENGTH) {
+                        console.error(`❌ URL příliš dlouhá pro QR kód: ${url.length} > ${MAX_QR_URL_LENGTH}`);
+                        this.showToast('URL je příliš dlouhá pro QR kód', true);
                         return;
                     }
                     
