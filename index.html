@@ -17,6 +17,9 @@
     <!-- QR Code Generator - LOKÁLNÍ KNIHOVNA -->
     <script src="./qrcode.min.js"></script>
     
+    <!-- LZ-String Compression Library -->
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+    
     <!-- Alpine.js CDN - defer zajistí načtení po DOM -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
    
@@ -499,7 +502,7 @@
                         type="button"
                         @click="showHelp = !showHelp"
                         :aria-expanded="showHelp"
-                        class="inline-flex items-center px-2 sm:px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press"
+                        class="inline-flex items-center px-2 sm:px-3 py-2 border border-blue-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-blue-200 hover:text-black focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press"
                         aria-label="Zobrazit nebo skrýt nápovědu"
                     >
                         <svg class="h-4 w-4 sm:mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -742,6 +745,39 @@
                     </button>
                 </div>
                 <p id="generate-help" class="text-xs text-gray-500 mt-2">Vložte text, nahrajte nebo vyfotografujte obrázek pro vygenerování QR kódu, URL a kódu</p>
+                
+                <!-- URL Too Long Warning -->
+                <div x-show="urlTooLong" 
+                     x-transition
+                     class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded" 
+                     role="alert">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Obsah je příliš velký</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>URL je příliš dlouhá (více než 2000 znaků). Pro sdílení velkého obsahu:</p>
+                                <ul class="list-disc list-inside mt-2 space-y-1">
+                                    <li>Zkraťte text nebo zmenšete obrázek</li>
+                                    <li>Použijte databázový režim (brzy dostupný)</li>
+                                    <li>Rozdělte obsah na menší části</li>
+                                </ul>
+                            </div>
+                            <div class="mt-3">
+                                <button 
+                                    type="button"
+                                    @click="urlTooLong = false; clearAll()"
+                                    class="text-sm font-medium text-yellow-800 hover:text-yellow-900 underline">
+                                    Vymazat a zkusit znovu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
 
@@ -763,7 +799,10 @@
                         </div>
                         <div class="mt-3 space-y-1">
                             <p class="text-xs text-gray-600 font-medium">📱 Naskenujte kamerou telefonu</p>
-                            <p class="text-2xs text-gray-500">256×256px • Čitelnost ze 2m • Error correction M</p>
+                            <p x-show="compressionEnabled && generatedUrl.length > 500" 
+                               class="text-2xs text-green-600 font-medium">
+                                📦 Komprimovaná data
+                            </p>
                         </div>
                     </div>
                    
@@ -813,7 +852,7 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">Řekněte tento kód nahlas nebo ho napište na tabuli</p>
+                                <p class="text-xs text-gray-500 mt-1">Kód pro sdílení</p>
                             </div>
                         </div>
                     </div>
@@ -886,7 +925,6 @@
         <footer class="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
             <div class="text-center text-sm text-gray-500">
                 <p>QRPaste &copy; 2025 - Rychlé sdílení pro školy</p>
-                <p class="mt-1">Mobile-friendly • Bez registrace • Open source</p>
             </div>
         </footer>
     </div>
@@ -1032,54 +1070,119 @@
                 cameraStream: null,
                 loading: false,
                 liveMessage: '',
+                urlTooLong: false,
+                compressionEnabled: true,
                 toast: {
                     show: false,
                     message: '',
                     error: false
                 },
+                
+                // URL Limits
+                MAX_URL_LENGTH: 2000,  // Bezpečný limit pro většinu prohlížečů
+                MAX_CONTENT_SIZE: 50000, // Max velikost obsahu před kompresí (50KB)
 
                 // ==============================================
                 // ENCODE/DECODE FUNKCE - URL-safe Base64
                 // ==============================================
                 
                 /**
-                 * Enkóduje text do URL-safe base64
+                 * Enkóduje text do URL-safe base64 s optional kompresí
                  * Správně zpracovává UTF-8 znaky včetně emoji
                  * @param {string} str - Text k zakódování
-                 * @returns {string} - URL-safe base64 string
+                 * @param {boolean} compress - Použít LZ kompresi (výchozí: true)
+                 * @returns {object} - {encoded: string, compressed: boolean, originalSize: number, encodedSize: number}
                  */
-                encodeToBase64(str) {
+                encodeToBase64(str, compress = true) {
                     try {
-                        // Konverze UTF-8 na byte array a pak na base64
-                        const utf8Bytes = new TextEncoder().encode(str);
-                        let binary = '';
-                        utf8Bytes.forEach(byte => {
-                            binary += String.fromCharCode(byte);
-                        });
+                        const originalSize = str.length;
                         
-                        // Base64 encode a převod na URL-safe formát
-                        const base64 = btoa(binary);
-                        return base64
-                            .replace(/\+/g, '-')  // + -> -
-                            .replace(/\//g, '_')  // / -> _
-                            .replace(/=+$/, '');  // Odstranění padding =
+                        // Kontrola velikosti obsahu
+                        if (originalSize > this.MAX_CONTENT_SIZE) {
+                            throw new Error(`Obsah je příliš velký (${Math.round(originalSize/1024)}KB). Maximum je ${Math.round(this.MAX_CONTENT_SIZE/1024)}KB.`);
+                        }
+                        
+                        let dataToEncode = str;
+                        let isCompressed = false;
+                        
+                        // Pokusit se o kompresi pro dlouhé texty
+                        if (compress && this.compressionEnabled && typeof LZString !== 'undefined' && originalSize > 100) {
+                            try {
+                                const compressed = LZString.compressToEncodedURIComponent(str);
+                                
+                                // Použít kompresi pouze pokud je menší
+                                if (compressed.length < originalSize) {
+                                    dataToEncode = compressed;
+                                    isCompressed = true;
+                                    console.log(`📦 Komprese: ${originalSize} → ${compressed.length} (${Math.round((1 - compressed.length/originalSize) * 100)}% úspora)`);
+                                } else {
+                                    console.log('ℹ️ Komprese neefektivní, používám raw data');
+                                }
+                            } catch (compressError) {
+                                console.warn('⚠️ Komprese selhala, používám raw data:', compressError);
+                                isCompressed = false;
+                            }
+                        }
+                        
+                        // Base64 encode pouze pokud není už compressed (LZString.compressToEncodedURIComponent je už URI-safe)
+                        let encoded;
+                        if (isCompressed) {
+                            encoded = dataToEncode; // Už je URI-safe
+                        } else {
+                            // Konverze UTF-8 na byte array a pak na base64
+                            const utf8Bytes = new TextEncoder().encode(dataToEncode);
+                            let binary = '';
+                            utf8Bytes.forEach(byte => {
+                                binary += String.fromCharCode(byte);
+                            });
+                            
+                            // Base64 encode a převod na URL-safe formát
+                            const base64 = btoa(binary);
+                            encoded = base64
+                                .replace(/\+/g, '-')  // + -> -
+                                .replace(/\//g, '_')  // / -> _
+                                .replace(/=+$/, '');  // Odstranění padding =
+                        }
+                        
+                        return {
+                            encoded: encoded,
+                            compressed: isCompressed,
+                            originalSize: originalSize,
+                            encodedSize: encoded.length
+                        };
                     } catch (error) {
                         console.error('Chyba při enkódování:', error);
-                        this.showToast('Chyba při kódování textu', true);
-                        return '';
+                        this.showToast(error.message || 'Chyba při kódování textu', true);
+                        return null;
                     }
                 },
 
                 /**
-                 * Dekóduje URL-safe base64 zpět na text
+                 * Dekóduje URL-safe base64 nebo komprimovaný string zpět na text
                  * Správně zpracovává UTF-8 znaky včetně emoji
-                 * @param {string} base64 - URL-safe base64 string
+                 * @param {string} encoded - Zakódovaný string
+                 * @param {boolean} isCompressed - Indikuje zda je komprimovaný
                  * @returns {string} - Dekódovaný text
                  */
-                decodeFromBase64(base64) {
+                decodeFromBase64(encoded, isCompressed = false) {
                     try {
+                        // Pokud je komprimovaný, použít LZString dekomprese
+                        if (isCompressed && typeof LZString !== 'undefined') {
+                            try {
+                                const decompressed = LZString.decompressFromEncodedURIComponent(encoded);
+                                if (decompressed) {
+                                    console.log('📦 Dekomprese úspěšná');
+                                    return decompressed;
+                                }
+                                console.warn('⚠️ Dekomprese vrátila null, zkouším base64...');
+                            } catch (decompressError) {
+                                console.warn('⚠️ Dekomprese selhala, zkouším base64:', decompressError);
+                            }
+                        }
+                        
+                        // Standardní base64 dekódování
                         // Převod URL-safe base64 na standardní base64
-                        let standardBase64 = base64
+                        let standardBase64 = encoded
                             .replace(/-/g, '+')  // - -> +
                             .replace(/_/g, '/'); // _ -> /
                         
@@ -1101,7 +1204,7 @@
                         return new TextDecoder().decode(bytes);
                     } catch (error) {
                         console.error('Chyba při dekódování:', error);
-                        this.showToast('Chyba při dekódování obsahu', true);
+                        this.showToast('Chyba při dekódování obsahu - data mohou být poškozená', true);
                         return '';
                     }
                 },
@@ -1110,24 +1213,67 @@
                  * Aktualizuje URL hash s enkódovaným obsahem
                  * @param {string} content - Obsah k zakódování do hash
                  * @param {string} type - Typ obsahu ('text' nebo 'image')
+                 * @returns {boolean} - True pokud se podařilo, false pokud URL příliš dlouhá
                  */
                 updateUrlHash(content, type = 'text') {
                     try {
-                        const encoded = this.encodeToBase64(content);
-                        if (encoded) {
-                            // Format: #type:base64data
-                            window.location.hash = `${type}:${encoded}`;
-                            this.liveMessage = 'URL byla aktualizována';
+                        const result = this.encodeToBase64(content, this.compressionEnabled);
+                        
+                        if (!result) {
+                            return false;
                         }
+                        
+                        const { encoded, compressed, originalSize, encodedSize } = result;
+                        
+                        // Format: #[c:]type:base64data
+                        // Prefix 'c:' indikuje komprimovaná data
+                        const prefix = compressed ? 'c:' : '';
+                        const hash = `${prefix}${type}:${encoded}`;
+                        
+                        // Sestavení kompletní URL
+                        const baseUrl = window.location.origin + window.location.pathname + window.location.search;
+                        const fullUrl = baseUrl + '#' + hash;
+                        
+                        console.log(`📊 URL délka: ${fullUrl.length} znaků (limit: ${this.MAX_URL_LENGTH})`);
+                        
+                        // Kontrola délky URL
+                        if (fullUrl.length > this.MAX_URL_LENGTH) {
+                            console.warn(`⚠️ URL příliš dlouhá: ${fullUrl.length} > ${this.MAX_URL_LENGTH}`);
+                            this.urlTooLong = true;
+                            
+                            // Pokud ještě nebyla komprese použita, zkusit ji
+                            if (!compressed && this.compressionEnabled && type === 'text') {
+                                console.log('🔄 Zkouším se zapnutou kompresí...');
+                                return this.updateUrlHash(content, type);
+                            }
+                            
+                            this.showToast(`URL je příliš dlouhá (${fullUrl.length} znaků). Použijte databázový režim pro větší obsah.`, true);
+                            return false;
+                        }
+                        
+                        // URL je v pořádku, nastavit hash
+                        window.location.hash = hash;
+                        this.urlTooLong = false;
+                        this.liveMessage = `URL aktualizována (${compressed ? 'komprimovaná, ' : ''}${encodedSize} znaků)`;
+                        
+                        // Log úspory kompresí
+                        if (compressed) {
+                            const savings = Math.round((1 - encodedSize / originalSize) * 100);
+                            console.log(`✅ Komprese ušetřila ${savings}%`);
+                        }
+                        
+                        return true;
                     } catch (error) {
                         console.error('Chyba při aktualizaci URL:', error);
-                        this.showToast('Nepodařilo se aktualizovat URL', true);
+                        this.showToast('Nepodařilo se aktualizovat URL: ' + error.message, true);
+                        return false;
                     }
                 },
 
                 /**
                  * Načte a dekóduje obsah z URL hash při načtení stránky
                  * Automaticky volána při inicializaci
+                 * Podporuje formáty: #type:data nebo #c:type:data (komprimovaný)
                  */
                 loadFromUrlHash() {
                     try {
@@ -1137,30 +1283,48 @@
                             return; // Žádný hash
                         }
 
+                        console.log('📥 Načítám z URL hash...');
+                        
+                        // Kontrola komprese (prefix 'c:')
+                        let isCompressed = false;
+                        let dataHash = hash;
+                        
+                        if (hash.startsWith('c:')) {
+                            isCompressed = true;
+                            dataHash = hash.substring(2); // Odstranit 'c:' prefix
+                            console.log('📦 Detekována komprimovaná data');
+                        }
+
                         // Parsování formátu: type:base64data
-                        const colonIndex = hash.indexOf(':');
+                        const colonIndex = dataHash.indexOf(':');
                         if (colonIndex === -1) {
                             // Starý formát - pouze base64 data (zpětná kompatibilita)
-                            const decoded = this.decodeFromBase64(hash);
+                            const decoded = this.decodeFromBase64(dataHash, false);
                             if (decoded) {
                                 this.content = decoded;
                                 this.displayedContent = {
                                     type: 'text',
                                     content: decoded
                                 };
-                                this.showToast('Obsah načten z URL');
+                                this.showToast('Obsah načten z URL (starý formát)');
                             }
                             return;
                         }
 
-                        const type = hash.substring(0, colonIndex);
-                        const encodedData = hash.substring(colonIndex + 1);
+                        const type = dataHash.substring(0, colonIndex);
+                        const encodedData = dataHash.substring(colonIndex + 1);
                         
-                        const decoded = this.decodeFromBase64(encodedData);
+                        console.log(`📋 Typ: ${type}, Komprimovaný: ${isCompressed}, Délka: ${encodedData.length}`);
+                        
+                        const decoded = this.decodeFromBase64(encodedData, isCompressed);
                         
                         if (!decoded) {
+                            console.error('❌ Dekódování vrátilo prázdný string');
+                            this.showToast('Nepodařilo se dekódovat obsah z URL', true);
                             return;
                         }
+
+                        console.log(`✅ Dekódováno ${decoded.length} znaků`);
 
                         if (type === 'text') {
                             this.content = decoded;
@@ -1168,21 +1332,24 @@
                                 type: 'text',
                                 content: decoded
                             };
-                            this.showToast('Text načten z URL');
+                            this.showToast(`Text načten z URL${isCompressed ? ' (dekomprimovaný)' : ''}`);
                         } else if (type === 'image') {
                             this.selectedFile = decoded;
                             this.displayedContent = {
                                 type: 'image',
                                 content: decoded
                             };
-                            this.showToast('Obrázek načten z URL');
+                            this.showToast(`Obrázek načten z URL${isCompressed ? ' (dekomprimovaný)' : ''}`);
+                        } else {
+                            console.warn(`⚠️ Neznámý typ obsahu: ${type}`);
+                            this.showToast(`Neznámý typ obsahu: ${type}`, true);
                         }
 
                         this.liveMessage = `Obsah typu ${type} byl načten z URL`;
                         
                     } catch (error) {
                         console.error('Chyba při načítání z URL hash:', error);
-                        this.showToast('Nepodařilo se načíst obsah z URL', true);
+                        this.showToast('Nepodařilo se načíst obsah z URL - data mohou být poškozená', true);
                     }
                 },
 
@@ -1360,8 +1527,17 @@
                             if (this.content.trim()) {
                                 console.log('📝 Generuji sdílení pro text...');
                                 
-                                // Text obsah
-                                this.updateUrlHash(this.content, 'text');
+                                // Text obsah - pokus o zakódování do URL
+                                const success = this.updateUrlHash(this.content, 'text');
+                                
+                                if (!success) {
+                                    // URL je příliš dlouhá
+                                    console.warn('⚠️ URL je příliš dlouhá, zobrazuji varování');
+                                    this.showToast('❌ Obsah je příliš velký pro URL režim. Přepněte na databázový režim.', true);
+                                    this.urlTooLong = true;
+                                    return;
+                                }
+                                
                                 this.generatedUrl = window.location.href;
                                 this.shareCode = this.generateRandomCode();
                                 this.displayedContent = {
@@ -1369,7 +1545,7 @@
                                     content: this.content
                                 };
                                 
-                                console.log('✓ generatedUrl nastavena:', this.generatedUrl);
+                                console.log('✓ generatedUrl nastavena:', this.generatedUrl.substring(0, 100) + '...');
                                 console.log('✓ shareCode:', this.shareCode);
                                 
                                 // Generování QR kódu
@@ -1378,13 +1554,22 @@
                                     this.generateQRCode(this.generatedUrl);
                                 });
                                 
-                                this.showToast('URL vygenerována úspěšně');
+                                this.showToast('✅ URL vygenerována úspěšně');
                             } else if (this.selectedFile || this.capturedImage) {
                                 console.log('🖼️ Generuji sdílení pro obrázek...');
                                 
                                 // Obrázek
                                 const imageData = this.selectedFile || this.capturedImage;
-                                this.updateUrlHash(imageData, 'image');
+                                const success = this.updateUrlHash(imageData, 'image');
+                                
+                                if (!success) {
+                                    // URL je příliš dlouhá - obrázky jsou většinou větší
+                                    console.warn('⚠️ Obrázek je příliš velký pro URL');
+                                    this.showToast('❌ Obrázek je příliš velký pro URL režim. Zkuste menší obrázek nebo použijte databázový režim.', true);
+                                    this.urlTooLong = true;
+                                    return;
+                                }
+                                
                                 this.generatedUrl = window.location.href;
                                 this.shareCode = this.generateRandomCode();
                                 this.displayedContent = {
@@ -1392,7 +1577,7 @@
                                     content: imageData
                                 };
                                 
-                                console.log('✓ generatedUrl nastavena:', this.generatedUrl.substring(0, 100));
+                                console.log('✓ generatedUrl nastavena:', this.generatedUrl.substring(0, 100) + '...');
                                 console.log('✓ shareCode:', this.shareCode);
                                 
                                 // Generování QR kódu
@@ -1401,7 +1586,7 @@
                                     this.generateQRCode(this.generatedUrl);
                                 });
                                 
-                                this.showToast('QR kód vygenerován');
+                                this.showToast('✅ QR kód vygenerován');
                             } else {
                                 console.warn('⚠️ Žádný obsah k vygenerování');
                                 this.showToast('Vložte text nebo obrázek', true);
@@ -1689,6 +1874,15 @@
                     // Kontrola Alpine.js
                     if (typeof Alpine !== 'undefined') {
                         console.log('✅ Alpine.js načten úspěšně');
+                    }
+                    
+                    // Kontrola LZString (komprese)
+                    if (typeof LZString !== 'undefined') {
+                        console.log('✅ LZ-String kompresní knihovna načtena');
+                        this.compressionEnabled = true;
+                    } else {
+                        console.warn('⚠️ LZ-String není k dispozici - komprese vypnuta');
+                        this.compressionEnabled = false;
                     }
                     
                     // Načtení obsahu z URL hash při startu
