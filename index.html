@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
     <title>QRPaste - Rychlé sdílení pro školy</title>
+
     <meta name="description" content="Jednoduchá aplikace pro rychlé sdílení textu, kódu a screenshotů mezi studenty a učiteli">
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
@@ -13,11 +14,11 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
    
-    <!-- Alpine.js CDN -->
+    <!-- QR Code Generator - LOKÁLNÍ KNIHOVNA -->
+    <script src="./qrcode.min.js"></script>
+    
+    <!-- Alpine.js CDN - defer zajistí načtení po DOM -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-   
-    <!-- QR Code Generator CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
    
     <!-- Custom Tailwind Config -->
     <script>
@@ -525,9 +526,9 @@
                     <ul class="text-xs sm:text-sm text-blue-700 space-y-1" role="list">
                         <li>• <strong>URL režim:</strong> Kratší texty zakódované do URL (funguje offline)</li>
                         <li>• <strong>Databázový režim:</strong> Větší soubory uložené na server</li>
+                        <li>• <strong>TV režim:</strong> Tlačítko TV pro zobrazení na celou obrazovku</li>
                         <li>• Vložte text nebo nahrajte obrázek</li>
                         <li>• Sdílejte pomocí QR kódu nebo krátké URL nebo kódu</li>
-                        <li>• <strong>TV režim:</strong> Tlačítko TV pro zobrazení na celou obrazovku</li>
                     </ul>
                 </div>
             </div>
@@ -752,10 +753,18 @@
                     <!-- QR Code -->
                     <div class="text-center">
                         <h3 class="text-sm font-medium text-gray-700 mb-3">QR kód</h3>
-                        <div class="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
-                            <canvas id="qr-canvas" class="max-w-full h-auto"></canvas>
+                        <div class="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
+                            <canvas 
+                                id="qr-canvas" 
+                                width="256" 
+                                height="256"
+                                style="display: block; max-width: 100%; height: auto;"
+                            ></canvas>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">Naskenujte kamerou telefonu</p>
+                        <div class="mt-3 space-y-1">
+                            <p class="text-xs text-gray-600 font-medium">📱 Naskenujte kamerou telefonu</p>
+                            <p class="text-2xs text-gray-500">256×256px • Čitelnost ze 2m • Error correction M</p>
+                        </div>
                     </div>
                    
                     <!-- Share URL -->
@@ -1029,102 +1038,751 @@
                     error: false
                 },
 
-                // Placeholder metody - připravené pro implementaci
+                // ==============================================
+                // ENCODE/DECODE FUNKCE - URL-safe Base64
+                // ==============================================
+                
+                /**
+                 * Enkóduje text do URL-safe base64
+                 * Správně zpracovává UTF-8 znaky včetně emoji
+                 * @param {string} str - Text k zakódování
+                 * @returns {string} - URL-safe base64 string
+                 */
+                encodeToBase64(str) {
+                    try {
+                        // Konverze UTF-8 na byte array a pak na base64
+                        const utf8Bytes = new TextEncoder().encode(str);
+                        let binary = '';
+                        utf8Bytes.forEach(byte => {
+                            binary += String.fromCharCode(byte);
+                        });
+                        
+                        // Base64 encode a převod na URL-safe formát
+                        const base64 = btoa(binary);
+                        return base64
+                            .replace(/\+/g, '-')  // + -> -
+                            .replace(/\//g, '_')  // / -> _
+                            .replace(/=+$/, '');  // Odstranění padding =
+                    } catch (error) {
+                        console.error('Chyba při enkódování:', error);
+                        this.showToast('Chyba při kódování textu', true);
+                        return '';
+                    }
+                },
+
+                /**
+                 * Dekóduje URL-safe base64 zpět na text
+                 * Správně zpracovává UTF-8 znaky včetně emoji
+                 * @param {string} base64 - URL-safe base64 string
+                 * @returns {string} - Dekódovaný text
+                 */
+                decodeFromBase64(base64) {
+                    try {
+                        // Převod URL-safe base64 na standardní base64
+                        let standardBase64 = base64
+                            .replace(/-/g, '+')  // - -> +
+                            .replace(/_/g, '/'); // _ -> /
+                        
+                        // Doplnění padding
+                        while (standardBase64.length % 4) {
+                            standardBase64 += '=';
+                        }
+                        
+                        // Dekódování base64 na binary string
+                        const binary = atob(standardBase64);
+                        
+                        // Konverze binary string na byte array
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
+                        }
+                        
+                        // Dekódování UTF-8 byte array na string
+                        return new TextDecoder().decode(bytes);
+                    } catch (error) {
+                        console.error('Chyba při dekódování:', error);
+                        this.showToast('Chyba při dekódování obsahu', true);
+                        return '';
+                    }
+                },
+
+                /**
+                 * Aktualizuje URL hash s enkódovaným obsahem
+                 * @param {string} content - Obsah k zakódování do hash
+                 * @param {string} type - Typ obsahu ('text' nebo 'image')
+                 */
+                updateUrlHash(content, type = 'text') {
+                    try {
+                        const encoded = this.encodeToBase64(content);
+                        if (encoded) {
+                            // Format: #type:base64data
+                            window.location.hash = `${type}:${encoded}`;
+                            this.liveMessage = 'URL byla aktualizována';
+                        }
+                    } catch (error) {
+                        console.error('Chyba při aktualizaci URL:', error);
+                        this.showToast('Nepodařilo se aktualizovat URL', true);
+                    }
+                },
+
+                /**
+                 * Načte a dekóduje obsah z URL hash při načtení stránky
+                 * Automaticky volána při inicializaci
+                 */
+                loadFromUrlHash() {
+                    try {
+                        const hash = window.location.hash.slice(1); // Odstranění #
+                        
+                        if (!hash) {
+                            return; // Žádný hash
+                        }
+
+                        // Parsování formátu: type:base64data
+                        const colonIndex = hash.indexOf(':');
+                        if (colonIndex === -1) {
+                            // Starý formát - pouze base64 data (zpětná kompatibilita)
+                            const decoded = this.decodeFromBase64(hash);
+                            if (decoded) {
+                                this.content = decoded;
+                                this.displayedContent = {
+                                    type: 'text',
+                                    content: decoded
+                                };
+                                this.showToast('Obsah načten z URL');
+                            }
+                            return;
+                        }
+
+                        const type = hash.substring(0, colonIndex);
+                        const encodedData = hash.substring(colonIndex + 1);
+                        
+                        const decoded = this.decodeFromBase64(encodedData);
+                        
+                        if (!decoded) {
+                            return;
+                        }
+
+                        if (type === 'text') {
+                            this.content = decoded;
+                            this.displayedContent = {
+                                type: 'text',
+                                content: decoded
+                            };
+                            this.showToast('Text načten z URL');
+                        } else if (type === 'image') {
+                            this.selectedFile = decoded;
+                            this.displayedContent = {
+                                type: 'image',
+                                content: decoded
+                            };
+                            this.showToast('Obrázek načten z URL');
+                        }
+
+                        this.liveMessage = `Obsah typu ${type} byl načten z URL`;
+                        
+                    } catch (error) {
+                        console.error('Chyba při načítání z URL hash:', error);
+                        this.showToast('Nepodařilo se načíst obsah z URL', true);
+                    }
+                },
+
+                /**
+                 * Vyčistí URL hash
+                 */
+                clearUrlHash() {
+                    if (window.location.hash) {
+                        history.pushState('', document.title, window.location.pathname + window.location.search);
+                    }
+                },
+
+                // ==============================================
+                // HLAVNÍ APLIKAČNÍ METODY
+                // ==============================================
+
+                /**
+                 * Zpracování nahrání souboru
+                 */
                 handleFileUpload(event) {
-                    console.log('handleFileUpload called', event);
-                    // TODO: Implementovat logiku pro nahrávání souborů
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // Validace typu souboru
+                    if (!file.type.startsWith('image/')) {
+                        this.showToast('Prosím nahrajte obrázek', true);
+                        return;
+                    }
+
+                    // Validace velikosti (max 10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        this.showToast('Obrázek je příliš velký (max 10MB)', true);
+                        return;
+                    }
+
+                    this.setLoading(true);
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.selectedFile = e.target.result;
+                        this.setLoading(false);
+                        this.showToast('Obrázek nahrán úspěšně');
+                    };
+                    reader.onerror = () => {
+                        this.setLoading(false);
+                        this.showToast('Chyba při načítání obrázku', true);
+                    };
+                    reader.readAsDataURL(file);
                 },
 
+                /**
+                 * Zpracování drag & drop
+                 */
                 handleDrop(event) {
-                    console.log('handleDrop called', event);
-                    // TODO: Implementovat drag & drop logiku
+                    event.preventDefault();
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        const mockEvent = { target: { files: [files[0]] } };
+                        this.handleFileUpload(mockEvent);
+                    }
                 },
 
-                pasteFromClipboard() {
-                    console.log('pasteFromClipboard called');
-                    // TODO: Implementovat vkládání ze schránky
+                /**
+                 * Vložení obrázku ze schránky
+                 */
+                async pasteFromClipboard() {
+                    try {
+                        const clipboardItems = await navigator.clipboard.read();
+                        
+                        for (const item of clipboardItems) {
+                            for (const type of item.types) {
+                                if (type.startsWith('image/')) {
+                                    const blob = await item.getType(type);
+                                    const reader = new FileReader();
+                                    reader.onload = (e) => {
+                                        this.selectedFile = e.target.result;
+                                        this.showToast('Obrázek vložen ze schránky');
+                                    };
+                                    reader.readAsDataURL(blob);
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        this.showToast('Žádný obrázek ve schránce', true);
+                    } catch (error) {
+                        console.error('Chyba při vkládání ze schránky:', error);
+                        this.showToast('Nepodařilo se vložit ze schránky', true);
+                    }
                 },
 
-                openCamera() {
-                    console.log('openCamera called');
-                    // TODO: Implementovat otevření kamery
+                /**
+                 * Otevření kamery
+                 */
+                async openCamera() {
+                    this.cameraMode = true;
+                    try {
+                        this.cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { facingMode: 'environment' } 
+                        });
+                        this.cameraAvailable = true;
+                        
+                        this.$nextTick(() => {
+                            if (this.$refs.cameraVideo) {
+                                this.$refs.cameraVideo.srcObject = this.cameraStream;
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Chyba při přístupu ke kameře:', error);
+                        this.cameraAvailable = false;
+                        this.showToast('Nepodařilo se otevřít kameru', true);
+                    }
                 },
 
+                /**
+                 * Vyfocení fotky
+                 */
                 capturePhoto() {
-                    console.log('capturePhoto called');
-                    // TODO: Implementovat focení
+                    if (!this.$refs.cameraVideo || !this.$refs.cameraCanvas) return;
+                    
+                    const video = this.$refs.cameraVideo;
+                    const canvas = this.$refs.cameraCanvas;
+                    
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0);
+                    
+                    this.capturedImage = canvas.toDataURL('image/jpeg', 0.8);
+                    this.selectedFile = this.capturedImage;
+                    
+                    this.closeCameraModal();
+                    this.showToast('Fotka pořízena');
                 },
 
+                /**
+                 * Zavření kamery
+                 */
                 closeCameraModal() {
-                    console.log('closeCameraModal called');
-                    // TODO: Implementovat zavření kamery
+                    if (this.cameraStream) {
+                        this.cameraStream.getTracks().forEach(track => track.stop());
+                        this.cameraStream = null;
+                    }
+                    this.cameraMode = false;
+                    this.cameraAvailable = false;
                 },
 
+                /**
+                 * Odstranění obrázku
+                 */
                 removeImage() {
-                    console.log('removeImage called');
-                    // TODO: Implementovat odstranění obrázku
+                    this.selectedFile = null;
+                    this.capturedImage = null;
+                    // Reset file input
+                    const fileInput = document.getElementById('file-upload');
+                    if (fileInput) fileInput.value = '';
+                    this.showToast('Obrázek odstraněn');
                 },
 
+                /**
+                 * Generování sdílení (URL režim)
+                 */
                 generateShare() {
-                    console.log('generateShare called');
-                    // TODO: Implementovat generování sdílení
+                    console.log('🚀 generateShare() volána');
+                    console.log('Mode:', this.mode);
+                    console.log('Content:', this.content.substring(0, 50));
+                    console.log('Selected file:', !!this.selectedFile);
+                    
+                    this.setLoading(true);
+
+                    try {
+                        if (this.mode === 'url') {
+                            // URL režim - zakódování do URL hash
+                            if (this.content.trim()) {
+                                console.log('📝 Generuji sdílení pro text...');
+                                
+                                // Text obsah
+                                this.updateUrlHash(this.content, 'text');
+                                this.generatedUrl = window.location.href;
+                                this.shareCode = this.generateRandomCode();
+                                this.displayedContent = {
+                                    type: 'text',
+                                    content: this.content
+                                };
+                                
+                                console.log('✓ generatedUrl nastavena:', this.generatedUrl);
+                                console.log('✓ shareCode:', this.shareCode);
+                                
+                                // Generování QR kódu
+                                this.$nextTick(() => {
+                                    console.log('⏭️ $nextTick - volám generateQRCode');
+                                    this.generateQRCode(this.generatedUrl);
+                                });
+                                
+                                this.showToast('URL vygenerována úspěšně');
+                            } else if (this.selectedFile || this.capturedImage) {
+                                console.log('🖼️ Generuji sdílení pro obrázek...');
+                                
+                                // Obrázek
+                                const imageData = this.selectedFile || this.capturedImage;
+                                this.updateUrlHash(imageData, 'image');
+                                this.generatedUrl = window.location.href;
+                                this.shareCode = this.generateRandomCode();
+                                this.displayedContent = {
+                                    type: 'image',
+                                    content: imageData
+                                };
+                                
+                                console.log('✓ generatedUrl nastavena:', this.generatedUrl.substring(0, 100));
+                                console.log('✓ shareCode:', this.shareCode);
+                                
+                                // Generování QR kódu
+                                this.$nextTick(() => {
+                                    console.log('⏭️ $nextTick - volám generateQRCode');
+                                    this.generateQRCode(this.generatedUrl);
+                                });
+                                
+                                this.showToast('QR kód vygenerován');
+                            } else {
+                                console.warn('⚠️ Žádný obsah k vygenerování');
+                                this.showToast('Vložte text nebo obrázek', true);
+                            }
+                        } else {
+                            // Databázový režim - TODO: implementace s PHP
+                            console.log('💾 Databázový režim - TODO');
+                            this.showToast('Databázový režim bude implementován', true);
+                        }
+                    } catch (error) {
+                        console.error('❌ Chyba při generování:', error);
+                        this.showToast('Chyba při generování sdílení: ' + error.message, true);
+                    } finally {
+                        this.setLoading(false);
+                    }
                 },
 
+                /**
+                 * Generování náhodného kódu pro sdílení
+                 */
                 generateRandomCode() {
-                    console.log('generateRandomCode called');
-                    // TODO: Implementovat generování náhodného kódu
-                    return 'ABC123';
+                    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Bez podobných znaků
+                    let code = '';
+                    for (let i = 0; i < 6; i++) {
+                        code += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    return code;
                 },
 
+                /**
+                 * Generování QR kódu
+                 * Velikost: 256x256px pro čitelnost ze 2m vzdálenosti
+                 * Error correction: Level M (15% oprava chyb)
+                 * @param {string} url - URL pro zakódování do QR kódu
+                 */
                 generateQRCode(url) {
-                    console.log('generateQRCode called', url);
-                    // TODO: Implementovat generování QR kódu
+                    console.log('🔍 generateQRCode volána s URL:', url);
+                    
+                    const canvas = document.getElementById('qr-canvas');
+                    if (!canvas) {
+                        console.error('❌ QR canvas element nenalezen!');
+                        this.showToast('Canvas element nenalezen', true);
+                        return;
+                    }
+                    
+                    console.log('✓ Canvas nalezen:', canvas);
+                    
+                    // Validace URL
+                    if (!url || url.trim() === '') {
+                        console.warn('⚠️ Prázdná URL pro QR kód');
+                        return;
+                    }
+                    
+                    // Kontrola dostupnosti QRCode knihovny
+                    if (typeof QRCode === 'undefined') {
+                        console.error('❌ QRCode knihovna není načtená!');
+                        this.showToast('QRCode knihovna není dostupná', true);
+                        return;
+                    }
+                    
+                    console.log('✓ QRCode knihovna dostupná');
+                    
+                    // Konfigurace QR kódu optimalizovaná pro školní použití
+                    const qrOptions = {
+                        // Velikost 256x256px - optimální pro skenování ze 2 metrů
+                        width: 256,
+                        height: 256,
+                        
+                        // Error correction level M = 15% oprava chyb
+                        errorCorrectionLevel: 'M',
+                        
+                        // Margin - bílý okraj kolem QR kódu (4 moduly = standard)
+                        margin: 4,
+                        
+                        // Barvy - modrá/bílá odpovídající designu aplikace
+                        color: {
+                            dark: '#1e3a8a',    // Tmavě modrá (primary-900)
+                            light: '#ffffff'    // Bílá
+                        },
+                        
+                        // Typ QR kódu
+                        type: 'image/png',
+                        
+                        // Kvalita vykreslení
+                        rendererOpts: {
+                            quality: 1.0  // Maximální kvalita pro čitelnost
+                        }
+                    };
+                    
+                    console.log('⏳ Generuji QR kód...');
+                    
+                    // Generování QR kódu
+                    QRCode.toCanvas(canvas, url, qrOptions, (error) => {
+                        if (error) {
+                            console.error('❌ Chyba při generování QR kódu:', error);
+                            this.showToast('Chyba při vytváření QR kódu: ' + error.message, true);
+                            
+                            // Vyčištění canvas při chybě
+                            const ctx = canvas.getContext('2d');
+                            if (ctx) {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            }
+                        } else {
+                            console.log('✅ QR kód vygenerován úspěšně!');
+                            console.log('Canvas rozměry:', canvas.width, 'x', canvas.height);
+                            
+                            // Nastavení ARIA pro accessibility
+                            canvas.setAttribute('aria-label', `QR kód pro: ${url.substring(0, 50)}...`);
+                            
+                            // Viditelnost canvas
+                            const rect = canvas.getBoundingClientRect();
+                            console.log('Canvas pozice:', rect);
+                            console.log('Canvas visible:', rect.width > 0 && rect.height > 0);
+                        }
+                    });
                 },
 
+                /**
+                 * Automatické generování QR kódu při změně obsahu
+                 * Volat při každé změně content nebo selectedFile
+                 */
+                autoGenerateQRCode() {
+                    // Kontrola, zda je nějaký obsah k zakódování
+                    if (!this.content.trim() && !this.selectedFile && !this.capturedImage) {
+                        return;
+                    }
+                    
+                    // Automaticky spustit generování sdílení
+                    // (to zavolá generateQRCode interně)
+                    if (this.generatedUrl) {
+                        // Pokud už existuje URL, jen přegenerovat QR kód
+                        this.$nextTick(() => {
+                            this.generateQRCode(this.generatedUrl);
+                        });
+                    }
+                },
+
+                /**
+                 * Vymazání všeho
+                 */
                 clearAll() {
-                    console.log('clearAll called');
-                    // TODO: Implementovat vymazání všeho
+                    this.content = '';
+                    this.selectedFile = null;
+                    this.capturedImage = null;
+                    this.generatedUrl = '';
+                    this.shareCode = '';
+                    this.viewCode = '';
+                    this.displayedContent = null;
+                    this.clearUrlHash();
+                    
+                    // Reset file input
+                    const fileInput = document.getElementById('file-upload');
+                    if (fileInput) fileInput.value = '';
+                    
+                    this.showToast('Vše vymazáno');
                 },
 
+                /**
+                 * Zobrazení podle kódu
+                 */
                 viewByCode() {
-                    console.log('viewByCode called');
-                    // TODO: Implementovat zobrazení podle kódu
+                    // TODO: Implementace s databází
+                    this.showToast('Funkce bude implementována s databází', true);
                 },
 
+                /**
+                 * Přepnutí TV režimu
+                 */
                 toggleTVMode() {
-                    console.log('toggleTVMode called');
-                    // TODO: Implementovat přepínání TV režimu
+                    if (!this.displayedContent) {
+                        this.showToast('Nejprve vygenerujte obsah', true);
+                        return;
+                    }
+                    
+                    this.tvMode = !this.tvMode;
+                    
+                    if (this.tvMode) {
+                        this.requestFullscreen();
+                    } else {
+                        this.exitFullscreen();
+                    }
                 },
 
+                /**
+                 * Zapnutí fullscreen režimu
+                 */
                 requestFullscreen() {
-                    console.log('requestFullscreen called');
-                    // TODO: Implementovat fullscreen režim
+                    const elem = document.documentElement;
+                    if (elem.requestFullscreen) {
+                        elem.requestFullscreen();
+                    } else if (elem.webkitRequestFullscreen) {
+                        elem.webkitRequestFullscreen();
+                    } else if (elem.msRequestFullscreen) {
+                        elem.msRequestFullscreen();
+                    }
                 },
 
+                /**
+                 * Vypnutí fullscreen režimu
+                 */
                 exitFullscreen() {
-                    console.log('exitFullscreen called');
-                    // TODO: Implementovat ukončení fullscreen
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
                 },
 
-                copyToClipboard(text) {
-                    console.log('copyToClipboard called', text);
-                    // TODO: Implementovat kopírování do schránky
+                /**
+                 * Kopírování do schránky
+                 */
+                async copyToClipboard(text) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        this.showToast('Zkopírováno do schránky');
+                    } catch (error) {
+                        console.error('Chyba při kopírování:', error);
+                        this.showToast('Nepodařilo se zkopírovat', true);
+                    }
                 },
 
+                /**
+                 * Zobrazení toast notifikace
+                 */
                 showToast(message, isError = false) {
-                    console.log('showToast called', message, isError);
-                    // TODO: Implementovat zobrazování notifikací
+                    this.toast.message = message;
+                    this.toast.error = isError;
+                    this.toast.show = true;
+                    
+                    // Automatické skrytí po 3 sekundách
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
                 },
 
+                /**
+                 * Nastavení loading stavu
+                 */
                 setLoading(state) {
-                    console.log('setLoading called', state);
-                    // TODO: Implementovat loading stavy
+                    this.loading = state;
+                    if (state) {
+                        this.liveMessage = 'Zpracovávám...';
+                    }
                 },
 
-                // Initialize app
+                /**
+                 * Inicializace aplikace
+                 */
                 init() {
-                    console.log('QRPaste app initialized - ready for implementation');
-                    // TODO: Implementovat inicializační logiku
+                    console.log('🚀 QRPaste app initialized');
+                    
+                    // ==============================================
+                    // KONTROLA ZÁVISLOSTÍ
+                    // ==============================================
+                    
+                    // Počkat na načtení QRCode knihovny (max 5 sekund)
+                    const checkQRCode = (attempt = 1, maxAttempts = 50) => {
+                        if (typeof QRCode !== 'undefined') {
+                            console.log('✅ QRCode knihovna načtená úspěšně (pokus ' + attempt + ')');
+                            console.log('� QRCode typ:', typeof QRCode);
+                            console.log('📊 QRCode.toCanvas:', typeof QRCode.toCanvas);
+                            this.showToast('✅ Aplikace připravena', false);
+                        } else {
+                            if (attempt < maxAttempts) {
+                                console.log('⏳ Čekám na QRCode knihovnu... (pokus ' + attempt + '/' + maxAttempts + ')');
+                                setTimeout(() => checkQRCode(attempt + 1, maxAttempts), 100);
+                            } else {
+                                console.error('❌ TIMEOUT: QRCode knihovna se nepodařilo načíst po ' + (maxAttempts * 100) + 'ms');
+                                this.showToast('⚠️ QRCode knihovna není dostupná - použije se fallback', true);
+                                
+                                // Zavolat lokální fallback
+                                if (typeof loadLocalQRCode === 'function') {
+                                    loadLocalQRCode();
+                                    this.showToast('📦 Používám záložní QR generátor', false);
+                                }
+                            }
+                        }
+                    };
+                    
+                    // Start kontroly
+                    checkQRCode();
+                    
+                    // Kontrola Alpine.js
+                    if (typeof Alpine !== 'undefined') {
+                        console.log('✅ Alpine.js načten úspěšně');
+                    }
+                    
+                    // Načtení obsahu z URL hash při startu
+                    this.loadFromUrlHash();
+                    
+                    // ==============================================
+                    // WATCHERS - Automatické generování QR kódu
+                    // ==============================================
+                    
+                    // Sledování změn obsahu textu
+                    this.$watch('content', (value) => {
+                        // Regenerovat QR kód pokud už existuje generatedUrl
+                        if (this.generatedUrl && value.trim()) {
+                            // Debounce - čekat 500ms po posledním zápisu
+                            clearTimeout(this._contentDebounce);
+                            this._contentDebounce = setTimeout(() => {
+                                console.log('Content změněn - regenerace QR kódu');
+                                this.updateUrlHash(value, 'text');
+                                this.generatedUrl = window.location.href;
+                                this.$nextTick(() => {
+                                    this.generateQRCode(this.generatedUrl);
+                                });
+                            }, 500);
+                        }
+                    });
+                    
+                    // Sledování změn vybraného souboru
+                    this.$watch('selectedFile', (value) => {
+                        if (this.generatedUrl && value) {
+                            console.log('Soubor změněn - regenerace QR kódu');
+                            this.updateUrlHash(value, 'image');
+                            this.generatedUrl = window.location.href;
+                            this.$nextTick(() => {
+                                this.generateQRCode(this.generatedUrl);
+                            });
+                        }
+                    });
+                    
+                    // Sledování změn zachyceného obrázku
+                    this.$watch('capturedImage', (value) => {
+                        if (this.generatedUrl && value) {
+                            console.log('Fotka změněna - regenerace QR kódu');
+                            this.updateUrlHash(value, 'image');
+                            this.generatedUrl = window.location.href;
+                            this.$nextTick(() => {
+                                this.generateQRCode(this.generatedUrl);
+                            });
+                        }
+                    });
+                    
+                    // ==============================================
+                    // EVENT LISTENERS
+                    // ==============================================
+                    
+                    // Listener pro změny hash
+                    window.addEventListener('hashchange', () => {
+                        this.loadFromUrlHash();
+                    });
+                    
+                    // Listener pro fullscreen změny
+                    document.addEventListener('fullscreenchange', () => {
+                        if (!document.fullscreenElement) {
+                            this.tvMode = false;
+                        }
+                    });
+                    
+                    // Listener pro webkit fullscreen (Safari)
+                    document.addEventListener('webkitfullscreenchange', () => {
+                        if (!document.webkitFullscreenElement) {
+                            this.tvMode = false;
+                        }
+                    });
+                    
+                    // Listener pro paste event (Ctrl+V) pro vkládání obrázků
+                    document.addEventListener('paste', async (e) => {
+                        const items = e.clipboardData?.items;
+                        if (!items) return;
+                        
+                        for (let i = 0; i < items.length; i++) {
+                            if (items[i].type.indexOf('image') !== -1) {
+                                const blob = items[i].getAsFile();
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                    this.selectedFile = event.target.result;
+                                    this.showToast('Obrázek vložen ze schránky (Ctrl+V)');
+                                };
+                                reader.readAsDataURL(blob);
+                                break;
+                            }
+                        }
+                    });
+                    
+                    this.liveMessage = 'Aplikace připravena';
+                    console.log('✓ Watchers a event listeners inicializovány');
                 }
             }
         }
