@@ -5,37 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
     <title>QRPaste - Rychlé sdílení pro školy</title>
 
-    <!-- Bezpečnostní meta tagy -->
+    <!-- ============================================
+         BEZPEČNOSTNÍ META TAGY
+         Ochrana před útoky a bezpečné chování
+         ============================================ -->
     <meta name="description" content="Jednoduchá aplikace pro rychlé sdílení textu, kódu a screenshotů mezi studenty a učiteli">
-    <meta name="referrer" content="no-referrer">
-    <meta name="format-detection" content="telephone=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="referrer" content="no-referrer"> <!-- Neposílat referrer pro soukromí -->
+    <meta name="format-detection" content="telephone=no"> <!-- Zabránit auto-detekci telefonních čísel -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- Kompatibilita s IE -->
     
-    <!-- PWA meta tagy -->
-    <meta name="theme-color" content="#2563eb">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="QRPaste">
+    <!-- ============================================
+         PWA (PROGRESSIVE WEB APP) META TAGY
+         Umožňují instalaci jako aplikace na telefonu/tabletu
+         ============================================ -->
+    <meta name="theme-color" content="#2563eb"> <!-- Barva horní lišty v mobilních prohlížečích -->
+    <meta name="mobile-web-app-capable" content="yes"> <!-- Umožnit běh jako samostatná aplikace -->
+    <meta name="apple-mobile-web-app-capable" content="yes"> <!-- Totéž pro iOS -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default"> <!-- Styl status baru na iOS -->
+    <meta name="apple-mobile-web-app-title" content="QRPaste"> <!-- Název ikony na iOS -->
    
-    <!-- Tailwind CSS CDN -->
+    <!-- ============================================
+         EXTERNÍ KNIHOVNY A STYLY
+         ============================================ -->
+    
+    <!-- Tailwind CSS - Utility-first CSS framework pro rychlé stylování -->
     <script src="https://cdn.tailwindcss.com"></script>
    
-    <!-- QR Code Generator - LOKÁLNÍ KNIHOVNA -->
+    <!-- QR Code Generator - node-qrcode knihovna -->
+    <!-- Primárně lokální soubor, fallback na CDN pokud lokální není dostupný -->
+    <!-- API: QRCode.toCanvas(canvas, text, options, callback) -->
     <script src="./qrcode.min.js"></script>
+    <script>
+        // Fallback na CDN pokud lokální soubor selže
+        window.addEventListener('error', function(e) {
+            if (e.target.tagName === 'SCRIPT' && e.target.src.includes('qrcode.min.js')) {
+                console.warn('⚠️ Lokální qrcode.min.js se nepodařilo načíst, zkouším CDN...');
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.js';
+                script.onerror = function() {
+                    console.error('❌ Nepodařilo se načíst QRCode ani z CDN!');
+                };
+                document.head.appendChild(script);
+            }
+        }, true);
+    </script>
     
-    <!-- LZ-String Compression Library -->
+    <!-- LZ-String - Kompresní knihovna pro zkrácení URL -->
+    <!-- Dokáže ušetřit 30-90% velikosti opakujícího se textu -->
     <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
     
-    <!-- Alpine.js CDN - defer zajistí načtení po DOM -->
+    <!-- Alpine.js - Reaktivní JavaScript framework (lehčí alternativa k Vue.js) -->
+    <!-- defer = načte se až po DOM, důležité pro správnou inicializaci -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
    
-    <!-- Custom Tailwind Config -->
+    <!-- ============================================
+         TAILWIND CSS KONFIGURACE
+         Vlastní barevné téma a utility třídy
+         ============================================ -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    // Vlastní barevná paleta - modrá jako hlavní barva
                     colors: {
+                        // Primární barva (modrá) - hlavní akční tlačítka
                         primary: {
                             50: '#eff6ff',
                             100: '#dbeafe',
@@ -46,8 +79,9 @@
                             600: '#2563eb',
                             700: '#1d4ed8',
                             800: '#1e40af',
-                            900: '#1e3a8a'
+                            900: '#1e3a8a' // Nejtmavší modrá - použita v logu
                         },
+                        // Zelená barva - úspěšné akce a potvrzení
                         success: {
                             50: '#f0fdf4',
                             100: '#dcfce7',
@@ -60,6 +94,7 @@
                             800: '#166534',
                             900: '#14532d'
                         },
+                        // Červená barva - chybové stavy a varování
                         error: {
                             50: '#fef2f2',
                             100: '#fee2e2',
@@ -72,6 +107,7 @@
                             800: '#991b1b',
                             900: '#7f1d1d'
                         },
+                        // Žlutá/oranžová - varování a upozornění
                         warning: {
                             50: '#fffbeb',
                             100: '#fef3c7',
@@ -85,35 +121,48 @@
                             900: '#78350f'
                         }
                     },
+                    // Vlastní velikosti fontů
                     fontSize: {
-                        '2xs': ['0.625rem', { lineHeight: '0.75rem' }],
+                        '2xs': ['0.625rem', { lineHeight: '0.75rem' }], // Extra malý text
                     },
+                    // Vlastní mezery/odsazení
                     spacing: {
-                        '18': '4.5rem',
-                        '88': '22rem',
+                        '18': '4.5rem', // 72px
+                        '88': '22rem',  // 352px
                     },
+                    // Vlastní stíny pro focus stavy (přístupnost)
                     boxShadow: {
-                        'focus': '0 0 0 3px rgba(37, 99, 235, 0.1)',
-                        'focus-error': '0 0 0 3px rgba(239, 68, 68, 0.1)',
-                        'focus-success': '0 0 0 3px rgba(34, 197, 94, 0.1)',
+                        'focus': '0 0 0 3px rgba(37, 99, 235, 0.1)',          // Modrý focus
+                        'focus-error': '0 0 0 3px rgba(239, 68, 68, 0.1)',    // Červený focus při chybě
+                        'focus-success': '0 0 0 3px rgba(34, 197, 94, 0.1)',  // Zelený focus při úspěchu
                     },
+                    // Minimální velikosti pro dotyková zařízení (44px je standard iOS/Android)
                     minHeight: {
-                        'touch': '44px',
+                        'touch': '44px', // Min. výška tlačítek na mobilech
                     },
                     minWidth: {
-                        'touch': '44px',
+                        'touch': '44px', // Min. šířka tlačítek na mobilech
                     }
                 }
             }
         }
     </script>
    
-    <!-- Favicon -->
+    <!-- ============================================
+         FAVICON (IKONA V ZÁLOŽCE)
+         Schránka s QR kódem - inline SVG
+         ============================================ -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='10' width='70' height='85' rx='8' fill='%231e3a8a'/><rect x='18' y='13' width='64' height='79' rx='5' fill='white'/><rect x='35' y='5' width='30' height='15' rx='7' fill='%231e3a8a'/><circle cx='50' cy='12.5' r='4' fill='white'/><g transform='translate(25,25)'><rect x='2' y='2' width='12' height='12' fill='%231e3a8a'/><rect x='5' y='5' width='6' height='6' fill='white'/><rect x='36' y='2' width='12' height='12' fill='%231e3a8a'/><rect x='39' y='5' width='6' height='6' fill='white'/><rect x='2' y='36' width='12' height='12' fill='%231e3a8a'/><rect x='5' y='39' width='6' height='6' fill='white'/><rect x='18' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='22' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='26' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='30' y='4' width='2' height='2' fill='%231e3a8a'/></g></svg>">
     
-    <!-- Custom CSS for enhanced UX -->
+    <!-- ============================================
+         VLASTNÍ CSS STYLY
+         Vylepšení UX, animace, přístupnost
+         ============================================ -->
     <style>
-        /* Touch-friendly optimizations */
+        /* ============================================
+           OPTIMALIZACE PRO DOTYKOVÉ DISPLEJE
+           Zajišťuje správné chování na tabletech/mobilech
+           ============================================ */
         @media (hover: none) and (pointer: coarse) {
             .hover\\:bg-gray-50:hover {
                 background-color: #f9fafb !important;
@@ -129,7 +178,10 @@
             }
         }
         
-        /* Enhanced focus indicators */
+        /* ============================================
+           VYLEPŠENÉ FOCUS INDIKÁTORY
+           Pro přístupnost (klávesnicová navigace)
+           ============================================ */
         .focus-enhanced:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
@@ -148,7 +200,10 @@
             border-color: #dc2626;
         }
         
-        /* Loading states */
+        /* ============================================
+           LOADING STAVY (NAČÍTÁNÍ)
+           Animované indikátory zpracování
+           ============================================ */
         .loading-button {
             position: relative;
             color: transparent !important;
@@ -374,6 +429,36 @@
 </head>
 
 <body class="h-full bg-gray-50 font-sans touch-manipulation" x-data="qrPasteApp()" x-init="init()">
+    <!-- ============================================
+         QRPASTE - HLAVNÍ APLIKACE
+         
+         STRUKTURA:
+         1. Skip link (přístupnost)
+         2. Loading overlay
+         3. Live region (screen readery)
+         4. Header (logo, název, nápověda)
+         5. Main content:
+            - Input sekce (text, obrázky)
+            - Výběr režimu (URL vs Database)
+            - Akční tlačítka (Generate, Clear)
+            - Output sekce (QR kód, URL, kód)
+            - Zobrazení podle kódu
+            - Zobrazený obsah
+         6. Footer
+         7. Modaly (kamera, TV režim, toast)
+         
+         TECHNOLOGIE:
+         - HTML5 + Tailwind CSS (styly)
+         - Alpine.js (reaktivita, bez build stepu)
+         - QRCode.js (generování QR kódů)
+         - LZ-String (komprese pro kratší URL)
+         
+         REŽIMY SDÍLENÍ:
+         - URL režim: Data v URL hash, offline, limit 2KB
+         - DB režim: Data na serveru, větší soubory (TODO)
+         
+         ============================================ -->
+    
     <!-- Skip to main content for accessibility -->
     <a href="#main-content" 
        class="skip-link sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-600 text-white px-4 py-2 rounded-md z-50 text-sm font-medium smooth-transition"
@@ -381,7 +466,10 @@
         Přejít na hlavní obsah
     </a>
 
-    <!-- Loading overlay -->
+    <!-- ============================================
+         LOADING OVERLAY
+         Zobrazí se při zpracování (nahrávání souboru, generování QR)
+         ============================================ -->
     <div x-show="loading" 
          class="loading-overlay fixed inset-0 flex items-center justify-center z-50" 
          x-cloak
@@ -396,15 +484,27 @@
         </div>
     </div>
 
-    <!-- Live region for announcements -->
+    <!-- ============================================
+         LIVE REGION (PŘÍSTUPNOST)
+         Screen readery čtou změny v této oblasti
+         Poskytuje zpětnou vazbu nevidomým uživatelům
+         ============================================ -->
     <div aria-live="polite" aria-atomic="true" class="sr-only" id="live-region">
         <span x-text="liveMessage"></span>
     </div>
 
 
-    <!-- Main Container -->
+    <!-- ============================================
+         HLAVNÍ KONTEJNER
+         Max šířka 4xl (896px) pro čitelnost na velkých displejích
+         ============================================ -->
     <div class="min-h-full flex flex-col max-w-4xl mx-auto bg-white sm:bg-gray-50">
        
+        <!-- ============================================
+             HEADER (ZÁHLAVÍ)
+             Logo, název aplikace, tlačítka (TV režim, Nápověda)
+             Sticky = zůstává nahoře při scrollování
+             ============================================ -->
         <!-- Header -->
         <header class="bg-white shadow-sm border-b border-gray-200 px-3 sm:px-6 lg:px-8 sticky top-0 z-40" role="banner">
             <div class="flex items-center justify-between h-14 sm:h-16">
@@ -545,9 +645,16 @@
         </header>
 
 
-        <!-- Main Content -->
+        <!-- ============================================
+             HLAVNÍ OBSAH APLIKACE
+             Všechny sekce pro práci s daty
+             ============================================ -->
         <main id="main-content" class="flex-1 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6" role="main">
            
+            <!-- ============================================
+                 INPUT SEKCE
+                 Zadávání textu, nahrávání obrázků, focení
+                 ============================================ -->
             <!-- Input Section -->
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" 
                      aria-labelledby="input-section"
@@ -684,6 +791,11 @@
             </section>
 
 
+            <!-- ============================================
+                 VÝBĚR REŽIMU SDÍLENÍ
+                 URL režim: Data v URL (offline, rychlé, limit 2KB)
+                 DB režim: Data na serveru (větší soubory, vyžaduje backend)
+                 ============================================ -->
             <!-- Mode Switch -->
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" aria-labelledby="mode-section">
                 <h2 id="mode-section" class="section-header text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Režim sdílení</h2>
@@ -736,6 +848,11 @@
             </section>
 
 
+            <!-- ============================================
+                 AKČNÍ TLAČÍTKA
+                 Generate = vytvoří QR kód, URL a kód
+                 Clear = vymaže vše
+                 ============================================ -->
             <!-- Action Buttons -->
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
                 <div class="flex flex-col gap-3">
@@ -799,6 +916,13 @@
             </section>
 
 
+            <!-- ============================================
+                 OUTPUT SEKCE (VÝSLEDEK)
+                 QR kód: 256x256px, error correction M
+                 URL: Pro sdílení linkem
+                 Kód: 6 znaků pro rychlé zadání
+                 Zobrazí se až po kliknutí na "Vygenerovat"
+                 ============================================ -->
             <!-- Output Section -->
             <section x-show="generatedUrl" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" aria-labelledby="output-section">
                 <h2 id="output-section" class="text-lg font-semibold text-gray-900 mb-4">Sdílení</h2>
@@ -878,6 +1002,11 @@
             </section>
 
 
+            <!-- ============================================
+                 ZOBRAZENÍ PODLE KÓDU
+                 Zadej 6-znakový kód → zobraz uložený obsah
+                 Vyžaduje databázový režim (TODO)
+                 ============================================ -->
             <!-- Display Section (View by Code) -->
             <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" aria-labelledby="display-section">
                 <h2 id="display-section" class="text-lg font-semibold text-gray-900 mb-4">Zobrazit obsah podle kódu</h2>
@@ -906,6 +1035,11 @@
             </section>
 
 
+            <!-- ============================================
+                 ZOBRAZENÝ OBSAH
+                 Text nebo obrázek načtený z URL nebo kódu
+                 Tlačítko TV režim = fullscreen pro projekci
+                 ============================================ -->
             <!-- Displayed Content -->
             <section x-show="displayedContent" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" aria-labelledby="content-display">
                 <div class="flex items-center justify-between mb-4">
@@ -939,6 +1073,10 @@
         </main>
 
 
+        <!-- ============================================
+             FOOTER (ZÁPATÍ)
+             Copyright, info o aplikaci
+             ============================================ -->
         <!-- Footer -->
         <footer class="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
             <div class="text-center text-sm text-gray-500">
@@ -1019,6 +1157,12 @@
     </div>
 
 
+    <!-- ============================================
+         TV REŽIM (FULLSCREEN)
+         Zobrazí obsah na celou obrazovku
+         Pro projekci na tabuli/projektoru ve třídě
+         Ukončení: ESC nebo klik na ×
+         ============================================ -->
     <!-- TV Mode Modal/Fullscreen -->
     <div
         x-show="tvMode"
@@ -1068,49 +1212,100 @@
     </div>
 
 
-    <!-- Alpine.js App Data -->
+    <!-- ============================================
+         HLAVNÍ APLIKAČNÍ LOGIKA (Alpine.js)
+         Obsahuje všechny funkce a reaktivní data
+         ============================================ -->
     <script>
+        /**
+         * QRPaste - Hlavní aplikační komponenta
+         * Reaktivní aplikace pro sdílení textu a obrázků pomocí QR kódů
+         * 
+         * Režimy:
+         * - URL režim: Data zakódovaná v URL hash (offline, rychlé, limit 2000 znaků)
+         * - Databázový režim: Data uložená na serveru (větší soubory, TODO)
+         * 
+         * Komprese: LZ-String pro zkrácení URL (30-90% úspora)
+         * Bezpečnost: MIME whitelist, rate limiting, input sanitizace
+         */
         function qrPasteApp() {
             return {
-                // Data properties - inicializované pro Alpine.js
-                content: '',
-                selectedFile: null,
-                capturedImage: null,
-                mode: 'url',
-                showHelp: false,
-                generatedUrl: '',
-                shareCode: '',
-                viewCode: '',
-                displayedContent: null,
-                tvMode: false,
-                cameraMode: false,
-                cameraAvailable: false,
-                cameraStream: null,
-                loading: false,
-                liveMessage: '',
-                urlTooLong: false,
-                compressionEnabled: true,
-                toast: {
-                    show: false,
-                    message: '',
-                    error: false
+                // ============================================
+                // REAKTIVNÍ DATA PROPERTIES
+                // Automaticky sledovány Alpine.js pro změny
+                // ============================================
+                
+                content: '', // Text/kód zadaný uživatelem
+                selectedFile: null, // Data URL nahraného obrázku
+                capturedImage: null, // Data URL vyfocené fotky
+                mode: 'url', // Režim sdílení: 'url' nebo 'database'
+                showHelp: false, // Zobrazit nápovědu
+                generatedUrl: '', // Vygenerovaná URL pro sdílení
+                shareCode: '', // 6-znakový kód pro rychlé zadání
+                viewCode: '', // Kód zadaný uživatelem pro zobrazení
+                displayedContent: null, // Aktuálně zobrazený obsah {type, content}
+                tvMode: false, // Fullscreen režim pro projekci
+                cameraMode: false, // Otevřené okno kamery
+                cameraAvailable: false, // Kamera dostupná a funguje
+                cameraStream: null, // MediaStream z kamery
+                loading: false, // Zobrazit loading overlay
+                liveMessage: '', // Zpráva pro screen readery (přístupnost)
+                urlTooLong: false, // URL překročila limit
+                compressionEnabled: true, // Povolit LZ-String kompresi
+                toast: { // Toast notifikace (pravý dolní roh)
+                    show: false, // Zobrazit toast
+                    message: '', // Text zprávy
+                    error: false // Je to chybová zpráva?
                 },
                 
-                // Bezpečnostní limity
-                MAX_URL_LENGTH: 2000,  // Bezpečný limit pro většinu prohlížečů
+                // ============================================
+                // BEZPEČNOSTNÍ LIMITY
+                // Ochrana před útoky a přetížením
+                // ============================================
+                MAX_URL_LENGTH: 2000,  // Bezpečný limit pro většinu prohlížečů (IE: 2048, Chrome: 32k)
                 MAX_CONTENT_SIZE: 50000, // Max velikost obsahu před kompresí (50KB)
                 
-                // Rate limiting
-                _lastQRGeneration: 0,
-                _qrGenerationCount: 0,
+                // ============================================
+                // RATE LIMITING (OCHRANA PŘED SPAMEM)
+                // Max 5 QR kódů za 10 sekund
+                // ============================================
+                _lastQRGeneration: 0, // Timestamp poslední generace
+                _qrGenerationCount: 0, // Počet generací v aktuálním okně
                 QR_RATE_LIMIT: 5,      // Max 5 QR kódů
-                QR_RATE_WINDOW: 10000, // za 10 sekund
+                QR_RATE_WINDOW: 10000, // za 10 sekund (10000ms)
+                
+                // ============================================
+                // TOAST TIMEOUT
+                // Pro správné čištění timeoutu
+                // ============================================
+                _toastTimeout: null, // Reference na setTimeout pro toast
 
                 // ==============================================
                 // ENCODE/DECODE FUNKCE - URL-safe Base64
+                // Bezpečné kódování/dekódování s UTF-8 podporou
                 // ==============================================
                 
                 /**
+                 * ENKÓDOVÁNÍ TEXTU DO URL-SAFE BASE64
+                 * 
+                 * Co to dělá:
+                 * 1. Zkomprimuje text pomocí LZ-String (pokud je to výhodnější)
+                 * 2. Převede na URL-safe base64 (znaky +/= nahrazeny -_)
+                 * 3. Správně zpracuje UTF-8 znaky (čeština, emoji)
+                 * 
+                 * Formát URL hash: #[c:]type:data
+                 * - Prefix 'c:' = komprimovaná data
+                 * - type = 'text' nebo 'image'
+                 * - data = zakódovaný obsah
+                 * 
+                 * @param {string} str - Text k zakódování
+                 * @param {boolean} compress - Použít LZ kompresi (výchozí: true)
+                 * @returns {object} - {encoded: string, compressed: boolean, originalSize: number, encodedSize: number}
+                 * 
+                 * Příklad:
+                 * encodeToBase64("Ahoj světe!") 
+                 * → {encoded: "QWhvaiDFocSbdsSbdGUh", compressed: false, ...}
+                 * 
                  * Enkóduje text do URL-safe base64 s optional kompresí
                  * Správně zpracovává UTF-8 znaky včetně emoji
                  * @param {string} str - Text k zakódování
@@ -1182,6 +1377,22 @@
                 },
 
                 /**
+                 * DEKÓDOVÁNÍ Z URL-SAFE BASE64
+                 * 
+                 * Obrácená operace k encodeToBase64:
+                 * 1. Detekuje zda jde o komprimovaná data
+                 * 2. Dekomprimuje pokud potřeba (LZ-String)
+                 * 3. Převede URL-safe base64 na standardní base64
+                 * 4. Dekóduje UTF-8 znaky zpět na text
+                 * 
+                 * @param {string} encoded - Zakódovaný string z URL
+                 * @param {boolean} isCompressed - Je string komprimovaný?
+                 * @returns {string} - Dekódovaný původní text
+                 * 
+                 * Příklad:
+                 * decodeFromBase64("QWhvaiDFocSbdsSbdGUh", false)
+                 * → "Ahoj světe!"
+                 * 
                  * Dekóduje URL-safe base64 nebo komprimovaný string zpět na text
                  * Správně zpracovává UTF-8 znaky včetně emoji
                  * @param {string} encoded - Zakódovaný string
@@ -1234,6 +1445,25 @@
                 },
 
                 /**
+                 * AKTUALIZACE URL HASH S OBSAHEM
+                 * 
+                 * Zakóduje obsah a nastaví jako URL hash (část za #)
+                 * Umožňuje sdílení celé URL včetně dat
+                 * 
+                 * Proces:
+                 * 1. Zavolá encodeToBase64() pro zakódování
+                 * 2. Vytvoří hash ve formátu #[c:]type:data
+                 * 3. Zkontroluje délku výsledné URL (max 2000 znaků)
+                 * 4. Nastaví window.location.hash pokud OK
+                 * 
+                 * @param {string} content - Obsah k zakódování do hash
+                 * @param {string} type - Typ obsahu ('text' nebo 'image')
+                 * @returns {boolean} - True pokud se podařilo, false pokud URL příliš dlouhá
+                 * 
+                 * Příklad použití:
+                 * updateUrlHash("Hello world", "text")
+                 * → URL: https://example.com/index.html#text:SGVsbG8gd29ybGQ
+                 * 
                  * Aktualizuje URL hash s enkódovaným obsahem
                  * @param {string} content - Obsah k zakódování do hash
                  * @param {string} type - Typ obsahu ('text' nebo 'image')
@@ -1295,6 +1525,25 @@
                 },
 
                 /**
+                 * NAČTENÍ OBSAHU Z URL HASH
+                 * 
+                 * Při otevření stránky s URL obsahující # se pokusí načíst data
+                 * Umožňuje jednoduché sdílení - stačí poslat URL
+                 * 
+                 * Podporované formáty:
+                 * - #text:SGVs... = text data (nekomprimované)
+                 * - #c:text:SGVs... = text data (komprimované LZ-String)
+                 * - #image:data:image... = obrázek (base64)
+                 * 
+                 * Proces:
+                 * 1. Přečte window.location.hash
+                 * 2. Detekuje prefix 'c:' pro kompresi
+                 * 3. Parsuje typ a data
+                 * 4. Zavolá decodeFromBase64()
+                 * 5. Zobrazí obsah
+                 * 
+                 * Automaticky volána při init() aplikace
+                 * 
                  * Načte a dekóduje obsah z URL hash při načtení stránky
                  * Automaticky volána při inicializaci
                  * Podporuje formáty: #type:data nebo #c:type:data (komprimovaný)
@@ -1388,9 +1637,22 @@
 
                 // ==============================================
                 // BEZPEČNOSTNÍ & VALIDAČNÍ FUNKCE
+                // Ochrana před útoky a neplatnými vstupy
                 // ==============================================
 
                 /**
+                 * VALIDACE NÁZVU SOUBORU
+                 * 
+                 * Bezpečnostní kontrola proti path traversal útokům
+                 * Zakázané vzory:
+                 * - .. (parent directory - ../../../etc/passwd)
+                 * - Speciální znaky Windows: < > : " | ? *
+                 * - Control znaky (0x00-0x1F)
+                 * - Windows rezervovaná jména (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
+                 * 
+                 * @param {string} fileName - Název souboru ke kontrole
+                 * @returns {boolean} - True pokud je název bezpečný
+                 * 
                  * Validace názvu souboru (bezpečnostní kontrola)
                  * Zabraňuje path traversal a nebezpečným znakům
                  */
@@ -1412,6 +1674,21 @@
                 },
 
                 /**
+                 * SANITIZACE TEXTU (XSS OCHRANA)
+                 * 
+                 * Escapuje nebezpečné HTML znaky v uživatelském vstupu
+                 * Zabraňuje XSS útokům (Cross-Site Scripting)
+                 * 
+                 * Převody:
+                 * < → &lt;
+                 * > → &gt;
+                 * & → &amp;
+                 * " → &quot;
+                 * ' → &#x27;
+                 * 
+                 * @param {string} text - Text k sanitizaci
+                 * @returns {string} - Bezpečný escapovaný text
+                 * 
                  * Sanitizace textu (ochrana proti XSS)
                  * Escapuje HTML znaky v uživatelském vstupu
                  */
@@ -1479,6 +1756,19 @@
                 // ==============================================
 
                 /**
+                 * ZPRACOVÁNÍ NAHRÁNÍ SOUBORU
+                 * 
+                 * Komplexní bezpečnostní validace nahraného souboru:
+                 * 1. MIME type whitelist - pouze povolené obrázky
+                 * 2. Kontrola velikosti (max 10MB)
+                 * 3. Validace názvu souboru
+                 * 4. Timeout pro čtení (30 sekund)
+                 * 5. Konverze na Data URL (base64)
+                 * 
+                 * Povolené formáty: JPG, PNG, GIF, WebP, SVG
+                 * 
+                 * @param {Event} event - Input file change event
+                 * 
                  * Zpracování nahrání souboru
                  * Bezpečná validace typu a velikosti souboru
                  */
@@ -1796,6 +2086,24 @@
                 },
 
                 /**
+                 * GENEROVÁNÍ QR KÓDU
+                 * 
+                 * Vytvoří QR kód optimalizovaný pro školní prostředí:
+                 * - Velikost: 256×256px (čitelné ze 2m vzdálenosti)
+                 * - Error correction: Level M = 15% oprava chyb
+                 *   (i když je část QR poškozená, stále funguje)
+                 * - Margin: 4 moduly (standardní bílý okraj)
+                 * - Barvy: Modrá (#1e3a8a) na bílé pro kontrast
+                 * 
+                 * Bezpečnost:
+                 * - Rate limiting: max 5 QR za 10 sekund (ochrana proti spamu)
+                 * - Validace URL délky (max 4296 znaků pro QR Version 40)
+                 * - Kontrola dostupnosti QRCode knihovny
+                 * 
+                 * Použitá knihovna: QRCode.js (lokální, qrcode.min.js)
+                 * 
+                 * @param {string} url - URL pro zakódování do QR kódu
+                 * 
                  * Generování QR kódu
                  * Velikost: 256x256px pro čitelnost ze 2m vzdálenosti
                  * Error correction: Level M (15% oprava chyb)
@@ -2014,17 +2322,52 @@
                 },
 
                 /**
+                 * ZOBRAZENÍ TOAST NOTIFIKACE
+                 * 
+                 * Malá zpráva v pravém dolním rohu obrazovky
+                 * Informuje uživatele o úspěchu/chybě akce
+                 * 
+                 * Funkce:
+                 * - Auto-close po určité době (výchozí 3s)
+                 * - Hover pause - při najetí myší se timer zastaví
+                 * - Ruční zavření - tlačítko ❌
+                 * - duration=0 → pouze ruční zavření
+                 * 
+                 * Barvy:
+                 * - Zelená = úspěch (isError=false)
+                 * - Červená = chyba (isError=true)
+                 * 
+                 * @param {string} message - Zpráva k zobrazení
+                 * @param {boolean} isError - Je to chybová zpráva? (výchozí false)
+                 * @param {number} duration - Doba zobrazení v ms (výchozí 3000, 0 = neautomaticky zavírat)
+                 * 
+                 * Příklad:
+                 * showToast("Úspěšně uloženo") → zelený toast na 3s
+                 * showToast("Chyba!", true, 5000) → červený toast na 5s
+                 * 
                  * Zobrazení toast notifikace
+                 * @param {string} message - Zpráva k zobrazení
+                 * @param {boolean} isError - Je to chybová zpráva?
+                 * @param {number} duration - Doba zobrazení v ms (0 = neautomaticky zavírat)
                  */
-                showToast(message, isError = false) {
+                showToast(message, isError = false, duration = 3000) {
+                    // Vyčistit předchozí timeout pokud existuje
+                    if (this._toastTimeout) {
+                        clearTimeout(this._toastTimeout);
+                        this._toastTimeout = null;
+                    }
+                    
                     this.toast.message = message;
                     this.toast.error = isError;
                     this.toast.show = true;
                     
-                    // Automatické skrytí po 3 sekundách
-                    setTimeout(() => {
-                        this.toast.show = false;
-                    }, 3000);
+                    // Automatické skrytí pouze pokud je nastavena duration > 0
+                    if (duration > 0) {
+                        this._toastTimeout = setTimeout(() => {
+                            this.toast.show = false;
+                            this._toastTimeout = null;
+                        }, duration);
+                    }
                 },
 
                 /**
@@ -2038,6 +2381,26 @@
                 },
 
                 /**
+                 * INICIALIZACE APLIKACE
+                 * 
+                 * Spustí se automaticky při načtení stránky (x-init v HTML)
+                 * 
+                 * Co dělá:
+                 * 1. Kontrola závislostí (QRCode.js, Alpine.js, LZ-String)
+                 * 2. Načtení obsahu z URL hash (pokud existuje)
+                 * 3. Nastavení watcherů pro automatickou regeneraci QR
+                 * 4. Registrace event listenerů (paste, hashchange, fullscreen)
+                 * 
+                 * Watchers sledují změny:
+                 * - content → regeneruje QR při změně textu
+                 * - selectedFile → regeneruje QR při změně obrázku
+                 * - capturedImage → regeneruje QR při nové fotce
+                 * 
+                 * Event listeners:
+                 * - paste (Ctrl+V) → vložení obrázku ze schránky
+                 * - hashchange → aktualizace při změně URL
+                 * - fullscreenchange → detekce ukončení TV režimu
+                 * 
                  * Inicializace aplikace
                  */
                 init() {
@@ -2045,6 +2408,7 @@
                     
                     // ==============================================
                     // KONTROLA ZÁVISLOSTÍ
+                    // Ověření že všechny knihovny jsou načtené
                     // ==============================================
                     
                     // Počkat na načtení QRCode knihovny (max 5 sekund)
@@ -2053,7 +2417,7 @@
                             console.log('✅ QRCode knihovna načtená úspěšně (pokus ' + attempt + ')');
                             console.log('� QRCode typ:', typeof QRCode);
                             console.log('📊 QRCode.toCanvas:', typeof QRCode.toCanvas);
-                            this.showToast('✅ Aplikace připravena', false);
+                            this.showToast('Aplikace připravena', false);
                         } else {
                             if (attempt < maxAttempts) {
                                 console.log('⏳ Čekám na QRCode knihovnu... (pokus ' + attempt + '/' + maxAttempts + ')');
@@ -2185,6 +2549,15 @@
         }
     </script>
 
+    <!-- ============================================
+         MODÁLY (VYSKAKOVACÍ OKNA)
+         ============================================ -->
+    
+    <!-- ============================================
+         CAMERA MODAL (OKNO KAMERY)
+         Umožňuje vyfotit snímek obrazovky/dokumentu
+         Požaduje povolení přístupu ke kameře
+         ============================================ -->
     <!-- Camera Modal -->
     <div x-show="cameraMode" 
          x-transition:enter="transition ease-out duration-300"
@@ -2262,6 +2635,14 @@
         </div>
     </div>
 
+    <!-- ============================================
+         TOAST NOTIFIKACE
+         Malá zpráva v pravém dolním rohu
+         - Auto-close po 3 sekundách
+         - Hover pause (při najetí myší se zastaví timer)
+         - Ruční zavření tlačítkem ×
+         - Zelená = úspěch, červená = chyba
+         ============================================ -->
     <!-- Toast/Notification Component -->
     <div x-show="toast.show" 
          x-transition:enter="transition ease-out duration-300"
@@ -2272,25 +2653,41 @@
          x-transition:leave-end="opacity-0 transform translate-y-2 translate-x-2"
          class="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-sm z-50" 
          x-cloak
-         role="status"
+         role="alert"
          aria-live="polite"
-         aria-atomic="true">
-        <div class="rounded-lg shadow-lg overflow-hidden"
+         aria-atomic="true"
+         @mouseenter="_toastTimeout && clearTimeout(_toastTimeout)"
+         @mouseleave="toast.show && _toastTimeout === null && showToast(toast.message, toast.error, 3000)">
+        <div class="rounded-lg shadow-lg overflow-hidden relative"
              :class="{
                  'bg-success-600 text-white': !toast.error,
                  'bg-error-600 text-white': toast.error
              }">
             <div class="p-4">
-                <div class="flex items-center">
-                    <!-- Success Icon -->
-                    <svg x-show="!toast.error" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <!-- Error Icon -->
-                    <svg x-show="toast.error" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                    <p x-text="toast.message" class="text-sm font-medium"></p>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center flex-1 min-w-0">
+                        <!-- Success Icon -->
+                        <svg x-show="!toast.error" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <!-- Error Icon -->
+                        <svg x-show="toast.error" class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        <p x-text="toast.message" class="text-sm font-medium truncate pr-2"></p>
+                    </div>
+                    
+                    <!-- Close Button -->
+                    <button 
+                        type="button"
+                        @click="toast.show = false; _toastTimeout && clearTimeout(_toastTimeout)"
+                        class="ml-2 flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-white transition-colors"
+                        aria-label="Zavřít notifikaci"
+                        title="Zavřít (nebo počkejte 3 sekundy)">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
