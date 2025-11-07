@@ -155,277 +155,10 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='10' width='70' height='85' rx='8' fill='%231e3a8a'/><rect x='18' y='13' width='64' height='79' rx='5' fill='white'/><rect x='35' y='5' width='30' height='15' rx='7' fill='%231e3a8a'/><circle cx='50' cy='12.5' r='4' fill='white'/><g transform='translate(25,25)'><rect x='2' y='2' width='12' height='12' fill='%231e3a8a'/><rect x='5' y='5' width='6' height='6' fill='white'/><rect x='36' y='2' width='12' height='12' fill='%231e3a8a'/><rect x='39' y='5' width='6' height='6' fill='white'/><rect x='2' y='36' width='12' height='12' fill='%231e3a8a'/><rect x='5' y='39' width='6' height='6' fill='white'/><rect x='18' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='22' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='26' y='4' width='2' height='2' fill='%231e3a8a'/><rect x='30' y='4' width='2' height='2' fill='%231e3a8a'/></g></svg>">
     
     <!-- ============================================
-         VLASTNÍ CSS STYLY
+         VLASTNÍ CSS STYLY (EXTERNÍ)
          Vylepšení UX, animace, přístupnost
          ============================================ -->
-    <style>
-        /* ============================================
-           OPTIMALIZACE PRO DOTYKOVÉ DISPLEJE
-           Zajišťuje správné chování na tabletech/mobilech
-           ============================================ */
-        @media (hover: none) and (pointer: coarse) {
-            .hover\\:bg-gray-50:hover {
-                background-color: #f9fafb !important;
-            }
-            .hover\\:bg-primary-700:hover {
-                background-color: #1d4ed8 !important;
-            }
-            .hover\\:bg-success-700:hover {
-                background-color: #15803d !important;
-            }
-            .hover\\:bg-error-700:hover {
-                background-color: #b91c1c !important;
-            }
-        }
-        
-        /* ============================================
-           VYLEPŠENÉ FOCUS INDIKÁTORY
-           Pro přístupnost (klávesnicová navigace)
-           ============================================ */
-        .focus-enhanced:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-            border-color: #2563eb;
-        }
-        
-        .focus-enhanced-success:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-            border-color: #16a34a;
-        }
-        
-        .focus-enhanced-error:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-            border-color: #dc2626;
-        }
-        
-        /* ============================================
-           LOADING STAVY (NAČÍTÁNÍ)
-           Animované indikátory zpracování
-           ============================================ */
-        .loading-button {
-            position: relative;
-            color: transparent !important;
-        }
-        
-        .loading-button::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            border: 2px solid transparent;
-            border-top: 2px solid currentColor;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            color: white;
-        }
-        
-        .loading-overlay {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(2px);
-        }
-        
-        /* Improved transitions */
-        .smooth-transition {
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .scale-press:active {
-            transform: scale(0.98);
-        }
-        
-        /* Error states */
-        .error-input {
-            border-color: #dc2626;
-            background-color: #fef2f2;
-        }
-        
-        .error-input:focus {
-            border-color: #dc2626;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-        }
-        
-        /* Success states */
-        .success-input {
-            border-color: #16a34a;
-            background-color: #f0fdf4;
-        }
-        
-        /* High contrast mode support */
-        @media (prefers-contrast: high) {
-            .border-gray-300 {
-                border-color: #000 !important;
-            }
-            .text-gray-500 {
-                color: #000 !important;
-            }
-            .text-gray-700 {
-                color: #000 !important;
-            }
-        }
-        
-        /* Reduced motion support */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-        
-        /* Print styles */
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            body {
-                background: white !important;
-            }
-            .shadow-sm, .shadow-lg {
-                box-shadow: none !important;
-            }
-        }
-        
-        /* Loading animation */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Toast animations */
-        @keyframes slide-in-right {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slide-out-right {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-        
-        .toast-enter {
-            animation: slide-in-right 0.3s ease-out;
-        }
-        
-        .toast-leave {
-            animation: slide-out-right 0.2s ease-in;
-        }
-        
-        /* Keyboard navigation improvements */
-        .keyboard-focus:focus-visible {
-            outline: 3px solid #2563eb;
-            outline-offset: 2px;
-        }
-        
-        /* Skip link enhancement */
-        .skip-link:focus {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        /* Mobile-first responsive design helpers */
-        .touch-manipulation {
-            touch-action: manipulation;
-        }
-        
-        /* Improved button styling for accessibility */
-        button:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        
-        button:disabled:hover {
-            background-color: inherit !important;
-            border-color: inherit !important;
-            color: inherit !important;
-            transform: none !important;
-        }
-        
-        /* Specific fix for disabled primary buttons */
-        .bg-primary-600:disabled:hover {
-            background-color: #2563eb !important;
-            border-color: transparent !important;
-            color: white !important;
-        }
-        
-        .bg-green-600:disabled:hover {
-            background-color: #16a34a !important;
-            border-color: transparent !important;
-            color: white !important;
-        }
-        
-        /* Prevent disabled buttons from changing appearance on hover */
-        button:disabled:hover,
-        button[disabled]:hover {
-            opacity: 0.6 !important;
-            cursor: not-allowed !important;
-        }
-        
-        /* Additional specific overrides for Tailwind classes */
-        .disabled\:opacity-50:disabled {
-            opacity: 0.5 !important;
-        }
-        
-        .disabled\:cursor-not-allowed:disabled {
-            cursor: not-allowed !important;
-        }
-        
-        /* Ensure disabled state visual consistency */
-        .bg-primary-600:disabled,
-        .bg-green-600:disabled,
-        .bg-blue-600:disabled {
-            opacity: 0.6 !important;
-        }
-        
-        .bg-primary-600:disabled:hover,
-        .bg-green-600:disabled:hover,
-        .bg-blue-600:disabled:hover {
-            transform: none !important;
-            box-shadow: none !important;
-        }
-        
-        /* Better visual hierarchy */
-        .section-header {
-            border-left: 4px solid #2563eb;
-            padding-left: 1rem;
-        }
-        
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-            .auto-dark {
-                background-color: #1f2937;
-                color: #f9fafb;
-            }
-            
-            .auto-dark .bg-white {
-                background-color: #374151 !important;
-            }
-            
-            .auto-dark .text-gray-900 {
-                color: #f9fafb !important;
-            }
-            
-            .auto-dark .border-gray-200 {
-                border-color: #4b5563 !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="./styles.css">
 </head>
 
 <body class="h-full bg-gray-50 font-sans touch-manipulation" x-data="qrPasteApp()" x-init="init()">
@@ -765,7 +498,15 @@
                                     <span x-show="!isDragging">Přetáhněte obrázek sem nebo použijte tlačítka výše</span>
                                     <span x-show="isDragging" class="text-primary-600">📎 Pusťte zde pro nahrání</span>
                                 </p>
-                                <p id="file-upload-help" class="text-xs text-gray-500">PNG, JPG, GIF do 10MB (automaticky zkomprimováno)</p>
+                                <p id="file-upload-help" class="text-xs text-gray-500">
+                                    PNG, JPG, GIF do 10MB (automaticky zkomprimováno)<br>
+                                    <span class="inline-flex items-center gap-1 mt-1 text-blue-600 ctrlv-hint">
+                                        <kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">Ctrl</kbd>
+                                        +
+                                        <kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">V</kbd>
+                                        = Vložit screenshot
+                                    </span>
+                                </p>
                             </div>
                         </div>
                        
@@ -2340,6 +2081,47 @@
                 },
 
                 /**
+                 * Vizuální feedback při paste (bliknutí obrazovky)
+                 * Signalizuje uživateli že paste byl úspěšný
+                 */
+                showPasteFlash() {
+                    // Vytvoř overlay pro flash efekt
+                    const flash = document.createElement('div');
+                    flash.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(59, 130, 246, 0.3);
+                        pointer-events: none;
+                        z-index: 9999;
+                        animation: pasteFlash 0.4s ease-out;
+                    `;
+                    
+                    // Přidej CSS animaci pokud ještě neexistuje
+                    if (!document.getElementById('paste-flash-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'paste-flash-style';
+                        style.textContent = `
+                            @keyframes pasteFlash {
+                                0% { opacity: 0; transform: scale(0.95); }
+                                50% { opacity: 1; transform: scale(1); }
+                                100% { opacity: 0; transform: scale(1.05); }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                    
+                    document.body.appendChild(flash);
+                    
+                    // Odstraň po animaci
+                    setTimeout(() => {
+                        flash.remove();
+                    }, 400);
+                },
+
+                /**
                  * Vymazání všeho
                  */
                 clearAll() {
@@ -2627,22 +2409,111 @@
                         }
                     });
                     
-                    // Listener pro paste event (Ctrl+V) pro vkládání obrázků
+                    // ============================================
+                    // GLOBAL PASTE LISTENER (Ctrl+V)
+                    // Automatická detekce textu/obrázků ve schránce
+                    // Školní use-case: rychlé sdílení screenshotů
+                    // ============================================
                     document.addEventListener('paste', async (e) => {
                         const items = e.clipboardData?.items;
                         if (!items) return;
                         
+                        // Kontrola zda uživatel není v input fieldu (aby nerozbil normální paste)
+                        const activeElement = document.activeElement;
+                        const isInInput = activeElement && (
+                            activeElement.tagName === 'INPUT' || 
+                            activeElement.tagName === 'TEXTAREA' ||
+                            activeElement.isContentEditable
+                        );
+                        
+                        // Hledáme obrázek nebo text
+                        let hasImage = false;
+                        let hasText = false;
+                        let imageBlob = null;
+                        let textContent = '';
+                        
                         for (let i = 0; i < items.length; i++) {
-                            if (items[i].type.indexOf('image') !== -1) {
-                                const blob = items[i].getAsFile();
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                    this.selectedFile = event.target.result;
-                                    this.showToast('Obrázek vložen ze schránky (Ctrl+V)');
-                                };
-                                reader.readAsDataURL(blob);
-                                break;
+                            const item = items[i];
+                            
+                            // Detekce obrázku (Screenshot, Print Screen, Copy Image)
+                            if (item.type.indexOf('image') !== -1) {
+                                hasImage = true;
+                                imageBlob = item.getAsFile();
                             }
+                            // Detekce textu
+                            else if (item.type === 'text/plain') {
+                                hasText = true;
+                                item.getAsString(str => { textContent = str; });
+                            }
+                        }
+                        
+                        // ============================================
+                        // PRIORITA: Obrázek > Text
+                        // Pokud je ve schránce obrázek, použij ho
+                        // (typický školní případ - screenshot ze Snipping Tool)
+                        // ============================================
+                        if (hasImage && imageBlob) {
+                            // Prevent default pouze pokud zpracováváme obrázek
+                            if (!isInInput) {
+                                e.preventDefault();
+                            }
+                            
+                            console.log('📋 Paste: Obrázek detekován ze schránky');
+                            this.setLoading(true);
+                            
+                            // ✨ VIZUÁLNÍ FEEDBACK - bliknutí obrazovky
+                            this.showPasteFlash();
+                            
+                            try {
+                                const reader = new FileReader();
+                                reader.onload = async (event) => {
+                                    try {
+                                        // 🗜️ AUTOMATICKÁ KOMPRESE
+                                        const compressed = await this.compressImage(event.target.result, 800, 0.8);
+                                        this.selectedFile = compressed;
+                                        
+                                        const sizeKB = Math.round(compressed.length / 1024);
+                                        this.setLoading(false);
+                                        
+                                        // 🎉 SUCCESS FEEDBACK
+                                        this.showToast(`📸 Screenshot vložen! (${sizeKB}KB)`, false);
+                                        
+                                        // Přepnout na text area pokud je prázdná
+                                        if (!this.content.trim()) {
+                                            const textarea = document.querySelector('textarea[name="content"]');
+                                            if (textarea) {
+                                                this.$nextTick(() => textarea.focus());
+                                            }
+                                        }
+                                        
+                                        console.log(`✅ Obrázek zkomprimován a připraven (${sizeKB}KB)`);
+                                    } catch (error) {
+                                        console.error('❌ Chyba při kompresi paste obrázku:', error);
+                                        // Fallback - použij nekomprimovaný
+                                        this.selectedFile = event.target.result;
+                                        this.setLoading(false);
+                                        this.showToast('📸 Screenshot vložen!', false);
+                                    }
+                                };
+                                
+                                reader.onerror = (error) => {
+                                    console.error('❌ FileReader error při paste:', error);
+                                    this.setLoading(false);
+                                    this.showToast('❌ Chyba při načítání obrázku', true);
+                                };
+                                
+                                reader.readAsDataURL(imageBlob);
+                                
+                            } catch (error) {
+                                console.error('❌ Chyba při zpracování paste:', error);
+                                this.setLoading(false);
+                                this.showToast('❌ Nepodařilo se vložit obrázek', true);
+                            }
+                        }
+                        // Pokud je text a NENÍ v input fieldu, naplň textarea
+                        else if (hasText && textContent && !isInInput) {
+                            console.log('📋 Paste: Text detekován ze schránky');
+                            // Nechat prohlížeč zpracovat normálně
                         }
                     });
                     
