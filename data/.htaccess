@@ -1,0 +1,27 @@
+# Zabránění přímého přístupu k databázovým souborům
+<Files *.db>
+    Require all denied
+</Files>
+
+<Files *.sqlite>
+    Require all denied
+</Files>
+
+<Files *.sqlite3>
+    Require all denied
+</Files>
+
+# Povolit pouze PHP přístup
+<FilesMatch "\.(php)$">
+    Require all granted
+</FilesMatch>
+
+# Zabránění výpisu složky
+Options -Indexes
+
+# Bezpečnostní hlavičky
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
