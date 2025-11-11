@@ -1,0 +1,97 @@
+# QRPaste Security Headers & Configuration
+
+# === DISABLE DIRECTORY LISTING ===
+Options -Indexes
+
+# === SECURITY HEADERS ===
+<IfModule mod_headers.c>
+    # Anti-clickjacking
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Referrer policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # CSP pro HTML stránky
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    
+    # Remove server signature
+    Header always unset X-Powered-By
+    Header always unset Server
+</IfModule>
+
+# === DISABLE SERVER SIGNATURE ===
+ServerSignature Off
+
+# === FILE ACCESS PROTECTION ===
+# Blokuj přístup k citlivým souborům
+<FilesMatch "^(\.htaccess|\.htpasswd|\.env|\.git|composer\.json|composer\.lock|package\.json|package-lock\.json|README\.md|\.md)$">
+    Require all denied
+</FilesMatch>
+
+# Blokuj přístup k data složce
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^data/ - [F,L]
+</IfModule>
+
+# === MIME TYPE SECURITY ===
+<IfModule mod_mime.c>
+    # Force download pro potenciálně nebezpečné soubory
+    AddType application/octet-stream .exe .dll .bat .sh .php
+    
+    # Correct MIME types
+    AddType application/json .json
+    AddType image/svg+xml .svg
+</IfModule>
+
+# === REQUEST LIMITS ===
+# Max upload size (PHP override)
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value memory_limit 128M
+php_value max_execution_time 30
+php_value max_input_time 30
+
+# === ERROR HANDLING ===
+# Vypni display_errors v produkci
+php_flag display_errors Off
+php_flag display_startup_errors Off
+php_value error_reporting 32767
+php_value log_errors On
+php_value error_log error.log
+
+# === COMPRESSION ===
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css application/json application/javascript text/xml
+</IfModule>
+
+# === CACHING ===
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Static assets
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    
+    # HTML & API responses - no cache
+    ExpiresByType text/html "access plus 0 seconds"
+    ExpiresByType application/json "access plus 0 seconds"
+</IfModule>
+
+# === PREVENT HOTLINKING ===
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Prevent direct access to PHP files (kromě backend.php a index.php)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{REQUEST_URI} !^/(backend|index)\.php$
+    RewriteCond %{REQUEST_URI} \.php$
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# === CHARSET ===
+AddDefaultCharset UTF-8
