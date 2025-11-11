@@ -2507,14 +2507,54 @@
 
                 /**
                  * Kopírování do schránky
+                 * Podporuje moderní Clipboard API i starší fallback metodu
                  */
                 async copyToClipboard(text) {
+                    if (!text) {
+                        this.showToast('Není co zkopírovat', true);
+                        return;
+                    }
+                    
                     try {
-                        await navigator.clipboard.writeText(text);
-                        this.showToast('Zkopírováno do schránky');
+                        // Pokus o moderní Clipboard API (vyžaduje HTTPS nebo localhost)
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(text);
+                            this.showToast('✅ Zkopírováno do schránky');
+                            console.log('✅ Zkopírováno pomocí Clipboard API');
+                            return;
+                        }
+                        
+                        // Fallback pro starší prohlížeče nebo HTTP
+                        // Vytvoří dočasný textarea element
+                        const textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        textarea.style.position = 'fixed';
+                        textarea.style.left = '-999999px';
+                        textarea.style.top = '-999999px';
+                        textarea.style.opacity = '0';
+                        document.body.appendChild(textarea);
+                        
+                        // Výběr a kopírování
+                        textarea.focus();
+                        textarea.select();
+                        
+                        try {
+                            const successful = document.execCommand('copy');
+                            if (successful) {
+                                this.showToast('✅ Zkopírováno do schránky');
+                                console.log('✅ Zkopírováno pomocí execCommand (fallback)');
+                            } else {
+                                throw new Error('execCommand vrátil false');
+                            }
+                        } catch (err) {
+                            console.error('❌ Fallback kopírování selhalo:', err);
+                            this.showToast('❌ Nepodařilo se zkopírovat', true);
+                        } finally {
+                            document.body.removeChild(textarea);
+                        }
                     } catch (error) {
-                        console.error('Chyba při kopírování:', error);
-                        this.showToast('Nepodařilo se zkopírovat', true);
+                        console.error('❌ Chyba při kopírování:', error);
+                        this.showToast('❌ Nepodařilo se zkopírovat', true);
                     }
                 },
 
