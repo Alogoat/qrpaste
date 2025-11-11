@@ -14,7 +14,7 @@ Options -Indexes
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     
     # CSP pro HTML stránky
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdn.tailwindcss.com; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
     
     # Remove server signature
     Header always unset X-Powered-By
@@ -39,11 +39,18 @@ ServerSignature Off
 # === MIME TYPE SECURITY ===
 <IfModule mod_mime.c>
     # Force download pro potenciálně nebezpečné soubory
-    AddType application/octet-stream .exe .dll .bat .sh .php
+    AddType application/octet-stream .exe .dll .bat .sh
     
     # Correct MIME types
     AddType application/json .json
     AddType image/svg+xml .svg
+    
+    # PHP handler (ensure PHP is processed, not downloaded)
+    <IfModule !mod_php.c>
+        <IfModule !mod_php8.c>
+            AddHandler application/x-httpd-php .php
+        </IfModule>
+    </IfModule>
 </IfModule>
 
 # === REQUEST LIMITS ===
@@ -87,9 +94,11 @@ php_value error_log error.log
     RewriteEngine On
     
     # Prevent direct access to PHP files (kromě backend.php a index.php)
+    # OPRAVENO: Použití REQUEST_FILENAME místo URI pro kompatibilitu s různými cestami
     RewriteCond %{REQUEST_FILENAME} -f
-    RewriteCond %{REQUEST_URI} !^/(backend|index)\.php$
-    RewriteCond %{REQUEST_URI} \.php$
+    RewriteCond %{REQUEST_FILENAME} !backend\.php$
+    RewriteCond %{REQUEST_FILENAME} !index\.php$
+    RewriteCond %{REQUEST_FILENAME} \.php$
     RewriteRule .* - [F,L]
 </IfModule>
 
