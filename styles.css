@@ -325,3 +325,475 @@ button[disabled]:hover {
         border-color: #4b5563 !important;
     }
 }
+
+/* ============================================
+   ADDITIONAL STYLES FROM INDEX.HTML
+   Přesunuté styly pro zmenšení velikosti HTML souboru
+   ============================================ */
+
+/* X-cloak directive for Alpine.js */
+[x-cloak] { 
+    display: none !important; 
+}
+
+/* ============================================
+   ENHANCED BUTTON STYLES
+   Enhanced button interactions for school environment
+   ============================================ */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: white;
+    background-color: #2563eb;
+    min-height: 44px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #1d4ed8;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: #374151;
+    background-color: white;
+    min-height: 44px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+    background-color: #f9fafb;
+}
+
+.btn-success {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: white;
+    background-color: #16a34a;
+    min-height: 44px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-success:hover {
+    background-color: #15803d;
+}
+
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: white;
+    background-color: #dc2626;
+    min-height: 44px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-danger:hover {
+    background-color: #dc0000;
+}
+
+/* Clear button specific styling */
+.btn-clear:hover {
+    background-color: #dc0000;
+    color: #ffffff;
+    border-color: #7c0000;
+}
+
+/* Loading states for better UX feedback */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    color: white;
+}
+
+/* ============================================
+   ACCESSIBILITY - HIGH CONTRAST MODE
+   ============================================ */
+@media (prefers-contrast: high) {
+    .border-gray-300 {
+        border-color: #000 !important;
+        border-width: 2px !important;
+    }
+    .text-gray-500 {
+        color: #000 !important;
+    }
+    .text-gray-700 {
+        color: #000 !important;
+    }
+    .bg-gray-50 {
+        background-color: #f5f5f5 !important;
+    }
+}
+
+/* ============================================
+   INPUT STATES
+   Better error and success states
+   ============================================ */
+.input-error {
+    border-color: #dc2626;
+    background-color: #fef2f2;
+}
+
+.input-error:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input-success {
+    border-color: #16a34a;
+    background-color: #f0fdf4;
+}
+
+.input-success:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+/* ============================================
+   QR CODE STYLING
+   ============================================ */
+.qr-container {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 3px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   TV MODE OPTIMIZATIONS
+   TV Mode optimizations for classroom display
+   ============================================ */
+.tv-mode {
+    font-family: 'Courier New', monospace;
+    line-height: 1.6;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.tv-mode .text-content {
+    font-size: clamp(1.5rem, 5vw, 4rem);
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+/* ============================================
+   DRAG AND DROP
+   Improved drag and drop visual feedback
+   ============================================ */
+.drag-over {
+    border-color: #2563eb;
+    background-color: #eff6ff;
+    border-style: solid;
+    animation: pulse 2s infinite;
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   Better toast positioning and styling
+   ============================================ */
+.toast-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.toast-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* ============================================
+   MOBILE OPTIMIZATIONS
+   Mobile optimizations for school tablets
+   ============================================ */
+@media (max-width: 640px) {
+    .prose pre {
+        font-size: 0.875rem;
+        padding: 0.75rem;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    
+    /* Larger touch targets for student use */
+    button, label[role="button"], .clickable {
+        min-height: 48px;
+        min-width: 48px;
+    }
+    
+    /* Better keyboard display on mobile */
+    input[type="text"], textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Enhanced mobile navigation */
+    .mobile-stack {
+        flex-direction: column;
+    }
+    
+    .mobile-full-width {
+        width: 100%;
+    }
+    
+    /* Better spacing on mobile */
+    .mobile-compact {
+        padding: 0.75rem;
+    }
+}
+
+/* ============================================
+   TABLET OPTIMIZATIONS
+   ============================================ */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .tablet-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Optimized for 10-13 inch tablets */
+    .tablet-touch {
+        min-height: 48px;
+        min-width: 48px;
+    }
+}
+
+/* ============================================
+   TOUCH INTERACTIONS
+   Better touch interactions
+   ============================================ */
+@media (hover: none) {
+    .hover-none-bg:hover {
+        background-color: inherit !important;
+    }
+    
+    /* Enhanced tap feedback */
+    .tap-highlight {
+        -webkit-tap-highlight-color: rgba(37, 99, 235, 0.1);
+    }
+}
+
+/* ============================================
+   TOUCH ENHANCED ELEMENTS
+   Improved accessibility for touch devices
+   ============================================ */
+.touch-enhanced {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.touch-enhanced input,
+.touch-enhanced textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* ============================================
+   PWA ENHANCEMENTS
+   PWA and mobile app enhancements
+   ============================================ */
+@media (display-mode: standalone) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* ============================================
+   FOCUS INDICATORS
+   Better focus indicators for accessibility
+   ============================================ */
+.focus-visible-enhanced:focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.1);
+}
+
+/* ============================================
+   LOADING ANIMATIONS
+   Loading state improvements
+   ============================================ */
+.loading-pulse {
+    animation: pulse 2s infinite;
+}
+
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* ============================================
+   STATE INDICATORS
+   Error and success states with better contrast
+   ============================================ */
+.state-error {
+    background-color: #fef2f2;
+    border-color: #dc2626;
+    color: #991b1b;
+}
+
+.state-success {
+    background-color: #f0fdf4;
+    border-color: #16a34a;
+    color: #15803d;
+}
+
+.state-warning {
+    background-color: #fffbeb;
+    border-color: #d97706;
+    color: #92400e;
+}
+
+/* ============================================
+   PRINT STYLES
+   Print styles for homework/notes
+   ============================================ */
+@media print {
+    .no-print, button, .sticky, header, footer {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .section-header {
+        border-left: 4px solid #000;
+        page-break-after: avoid;
+    }
+    
+    .content-display {
+        font-family: 'Times New Roman', serif;
+        font-size: 12pt;
+        line-height: 1.5;
+        page-break-inside: avoid;
+    }
+}
+
+/* ============================================
+   REDUCED MOTION
+   Reduced motion for sensitive users
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   FOCUS MANAGEMENT
+   Focus management for keyboard navigation
+   ============================================ */
+.focus-trap:focus-within {
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   VISUAL HIERARCHY
+   Better visual hierarchy for classroom settings
+   ============================================ */
+.card-elevated {
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.card-elevated:hover {
+    box-shadow: 
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+/* ============================================
+   STATUS INDICATORS
+   ============================================ */
+.status-online {
+    background-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.status-offline {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* ============================================
+   ADDITIONAL ANIMATION KEYFRAMES
+   ============================================ */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes bounce-in {
+    0% { transform: scale(0.3) translateY(-50px); opacity: 0; }
+    50% { transform: scale(1.05) translateY(-10px); }
+    70% { transform: scale(0.9) translateY(0); }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes slide-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* ============================================
+   UTILITY ANIMATION CLASSES
+   Utility classes for dynamic styling
+   ============================================ */
+.reveal {
+    animation: bounce-in 0.6s ease-out;
+}
+
+.slide-up {
+    animation: slide-up 0.4s ease-out;
+}

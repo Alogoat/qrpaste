@@ -380,9 +380,125 @@
 
         <!-- ============================================
              HLAVNÍ OBSAH APLIKACE
-             Všechny sekce pro práci s daty
+             Dva pohledy: HOME (výchozí) a ADMIN (tvorba sdílení)
              ============================================ -->
         <main id="main-content" class="flex-1 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6" role="main">
+            
+            <!-- ============================================
+                 HOMEPAGE VIEW - Výchozí pohled
+                 Input pro zadání kódu + tlačítko na vytvoření
+                 ============================================ -->
+            <div x-show="view === 'home'" x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100">
+                
+                <!-- Hero Section -->
+                <div class="text-center mb-8 sm:mb-12">
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                        QRPaste
+                    </h1>
+                    <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                        Rychlé sdílení textu, kódu a obrázků pomocí QR kódů
+                    </p>
+                </div>
+
+                <!-- Zobrazit obsah podle kódu -->
+                <section class="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 max-w-2xl mx-auto mb-6">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 text-center">
+                        Zadejte kód sdílení
+                    </h2>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input
+                            type="text"
+                            x-model="viewCode"
+                            placeholder="Zadejte kód (např. ABC123)"
+                            class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 uppercase text-lg font-mono text-center"
+                            aria-label="Kód pro zobrazení obsahu"
+                            @keydown.enter="viewByCode"
+                        >
+                        <button
+                            type="button"
+                            @click="viewByCode"
+                            :disabled="!viewCode.trim()"
+                            class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-600 transition-colors min-h-touch shadow-md"
+                        >
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            Zobrazit
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Zobrazený obsah na homepage -->
+                <section x-show="displayedContent" class="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 max-w-4xl mx-auto mb-6" x-transition>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Zobrazený obsah</h2>
+                        
+                        <!-- TV Mode Button -->
+                        <button
+                            type="button"
+                            @click="toggleTVMode"
+                            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                            aria-label="Přepnout TV režim"
+                        >
+                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            TV režim
+                        </button>
+                    </div>
+                    
+                    <!-- Content Display Area -->
+                    <div class="bg-gray-50 rounded-lg p-6 min-h-[200px]">
+                        <div x-show="displayedContent && displayedContent.type === 'text'" class="prose max-w-none">
+                            <pre x-text="displayedContent?.content || ''" class="whitespace-pre-wrap font-mono text-sm"></pre>
+                        </div>
+                        
+                        <div x-show="displayedContent && displayedContent.type === 'image'" class="text-center">
+                            <img :src="displayedContent?.content || ''" alt="Sdílený obrázek" class="max-w-full h-auto rounded-lg mx-auto shadow-md">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Vytvořit nové sdílení -->
+                <div class="text-center">
+                    <button
+                        type="button"
+                        @click="view = 'admin'"
+                        class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 transition-colors shadow-lg transform hover:scale-105"
+                    >
+                        <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Vytvořit nové sdílení
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================================
+                 ADMIN VIEW - Administrace (tvorba sdílení)
+                 Veškerá původní funkcionalita
+                 ============================================ -->
+            <div x-show="view === 'admin'" x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100">
+                
+                <!-- Zpět na homepage -->
+                <div class="mb-4">
+                    <button
+                        type="button"
+                        @click="view = 'home'; clearAll()"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                    >
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Zpět na homepage
+                    </button>
+                </div>
            
             <!-- ============================================
                  INPUT SEKCE
@@ -535,7 +651,7 @@
                                 </button>
                                 <!-- Indikace velikosti -->
                                 <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap shadow-lg">
-                                    <span x-text="Math.round(((selectedFile || capturedImage).length / 1024)) + ' KB'"></span>
+                                    <span x-text="Math.round(((selectedFile || capturedImage)?.length || 0) / 1024) + ' KB'"></span>
                                 </div>
                             </div>
                         </div>
@@ -814,15 +930,18 @@
                
                 <!-- Content Display Area -->
                 <div class="bg-gray-50 rounded-lg p-4 min-h-[200px]">
-                    <div x-show="displayedContent.type === 'text'" class="prose max-w-none">
-                        <pre x-text="displayedContent.content" class="whitespace-pre-wrap font-mono text-sm"></pre>
+                    <div x-show="displayedContent && displayedContent.type === 'text'" class="prose max-w-none">
+                        <pre x-text="displayedContent?.content || ''" class="whitespace-pre-wrap font-mono text-sm"></pre>
                     </div>
                    
-                    <div x-show="displayedContent.type === 'image'" class="text-center">
-                        <img :src="displayedContent.content" alt="Sdílený obrázek" class="max-w-full h-auto rounded-lg mx-auto">
+                    <div x-show="displayedContent && displayedContent.type === 'image'" class="text-center">
+                        <img :src="displayedContent?.content || ''" alt="Sdílený obrázek" class="max-w-full h-auto rounded-lg mx-auto">
                     </div>
                 </div>
             </section>
+            
+            </div><!-- Konec ADMIN VIEW -->
+            
         </main>
 
 
@@ -939,12 +1058,12 @@
            
             <!-- TV Content -->
             <div class="text-center max-w-4xl">
-                <div x-show="displayedContent.type === 'text'">
-                    <pre class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl whitespace-pre-wrap font-mono leading-relaxed" x-text="displayedContent.content"></pre>
+                <div x-show="displayedContent && displayedContent.type === 'text'">
+                    <pre class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl whitespace-pre-wrap font-mono leading-relaxed" x-text="displayedContent?.content || ''"></pre>
                 </div>
                
-                <div x-show="displayedContent.type === 'image'">
-                    <img :src="displayedContent.content" alt="Sdílený obrázek v TV režimu" class="max-w-full max-h-[80vh] mx-auto">
+                <div x-show="displayedContent && displayedContent.type === 'image'">
+                    <img :src="displayedContent?.content || ''" alt="Sdílený obrázek v TV režimu" class="max-w-full max-h-[80vh] mx-auto">
                 </div>
             </div>
            
@@ -987,6 +1106,12 @@
                 // REAKTIVNÍ DATA PROPERTIES
                 // Automaticky sledovány Alpine.js pro změny
                 // ============================================
+                
+                // ============================================
+                // VIEW STATE
+                // 'home' = homepage (default), 'admin' = administrace
+                // ============================================
+                view: 'home', // Aktuální pohled
                 
                 content: '', // Text/kód zadaný uživatelem
                 selectedFile: null, // Data URL nahraného obrázku
@@ -1302,6 +1427,76 @@
                  * Automaticky volána při inicializaci
                  * Podporuje formáty: #type:data nebo #c:type:data (komprimovaný)
                  */
+                
+                /**
+                 * Načte obsah z URL - buď z hash (#text:...) nebo z databáze (?id=...)
+                 */
+                loadFromUrl() {
+                    try {
+                        // Zkontroluj query parametr ?id=
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const shareId = urlParams.get('id');
+                        
+                        if (shareId) {
+                            // Načti z databáze
+                            console.log('📥 Načítám z databáze, ID:', shareId);
+                            this.loadFromDatabase(shareId);
+                        } else {
+                            // Načti z hash
+                            this.loadFromUrlHash();
+                        }
+                    } catch (error) {
+                        console.error('Chyba při načítání z URL:', error);
+                        this.showToast('Chyba při načítání obsahu', true);
+                    }
+                },
+
+                /**
+                 * Načte obsah z databáze podle ID
+                 */
+                async loadFromDatabase(id) {
+                    try {
+                        this.setLoading(true);
+                        
+                        console.log('🔍 Stahování z backendu, ID:', id);
+                        
+                        const response = await fetch(`./backend.php?action=get&id=${id}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            console.log('✅ Obsah načten z databáze:', data.data);
+                            
+                            const content = data.data.content;
+                            const type = data.data.type;
+                            
+                            if (type === 'text') {
+                                this.content = content;
+                                this.displayedContent = {
+                                    type: 'text',
+                                    content: content
+                                };
+                                this.showToast('✅ Text načten z databáze');
+                            } else if (type === 'image') {
+                                this.selectedFile = content;
+                                this.displayedContent = {
+                                    type: 'image',
+                                    content: content
+                                };
+                                this.showToast('✅ Obrázek načten z databáze');
+                            }
+                            
+                            this.liveMessage = `Obsah typu ${type} byl načten z databáze`;
+                        } else {
+                            throw new Error(data.error || 'Nepodařilo se načíst obsah');
+                        }
+                    } catch (error) {
+                        console.error('❌ Chyba při načítání z databáze:', error);
+                        this.showToast('Chyba při načítání: ' + error.message, true);
+                    } finally {
+                        this.setLoading(false);
+                    }
+                },
+                
                 loadFromUrlHash() {
                     try {
                         const hash = window.location.hash.slice(1); // Odstranění #
@@ -1906,9 +2101,77 @@
                                 this.showToast('Vložte text nebo obrázek', true);
                             }
                         } else {
-                            // Databázový režim - TODO: implementace s PHP
-                            console.log('💾 Databázový režim - TODO');
-                            this.showToast('Databázový režim bude implementován', true);
+                            // Databázový režim - ukládání na server
+                            console.log('💾 Databázový režim - ukládání na server');
+                            
+                            if (!this.content.trim() && !this.selectedFile && !this.capturedImage) {
+                                console.warn('⚠️ Žádný obsah k uložení');
+                                this.showToast('Vložte text nebo obrázek', true);
+                                return;
+                            }
+                            
+                            // Připrav data pro uložení
+                            let contentToSave = '';
+                            let contentType = 'text';
+                            
+                            if (this.content.trim()) {
+                                contentToSave = this.content;
+                                contentType = 'text';
+                            } else if (this.selectedFile || this.capturedImage) {
+                                contentToSave = this.selectedFile || this.capturedImage;
+                                contentType = 'image';
+                            }
+                            
+                            // Validace velikosti
+                            const validation = this.validateContentSize(contentToSave);
+                            if (!validation.valid) {
+                                console.error('❌ Obsah příliš velký:', validation.message);
+                                this.showToast(validation.message, true);
+                                return;
+                            }
+                            
+                            console.log(`📤 Odesílám na server: typ=${contentType}, velikost=${validation.sizeKB}KB`);
+                            
+                            // Odeslání na backend
+                            fetch('./backend.php?action=save', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    content: contentToSave,
+                                    content_type: contentType,
+                                    expires_days: 7
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log('✅ Uloženo na server:', data.data);
+                                    
+                                    // Nastav URL s ID z databáze
+                                    const shareUrl = window.location.origin + window.location.pathname + '?id=' + data.data.id;
+                                    this.generatedUrl = shareUrl;
+                                    this.shareCode = data.data.id;
+                                    this.displayedContent = {
+                                        type: contentType,
+                                        content: contentToSave
+                                    };
+                                    
+                                    // Generování QR kódu
+                                    this.$nextTick(() => {
+                                        this.generateQRCode(shareUrl);
+                                    });
+                                    
+                                    this.showToast('✅ Obsah uložen na serveru');
+                                } else {
+                                    throw new Error(data.error || 'Nepodařilo se uložit na server');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('❌ Chyba při ukládání na server:', error);
+                                this.showToast('Chyba při ukládání: ' + error.message, true);
+                            });
                         }
                     } catch (error) {
                         console.error('❌ Chyba při generování:', error);
@@ -2144,9 +2407,57 @@
                 /**
                  * Zobrazení podle kódu
                  */
-                viewByCode() {
-                    // TODO: Implementace s databází
-                    this.showToast('Funkce bude implementována s databází', true);
+                async viewByCode() {
+                    if (!this.viewCode.trim()) {
+                        this.showToast('Zadejte kód', true);
+                        return;
+                    }
+                    
+                    const code = this.viewCode.trim();
+                    console.log('🔍 Načítání podle kódu:', code);
+                    
+                    try {
+                        this.setLoading(true);
+                        
+                        // Načtení z databáze podle ID
+                        const response = await fetch(`./backend.php?action=get&id=${code}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            console.log('✅ Obsah načten:', data.data);
+                            
+                            const content = data.data.content;
+                            const type = data.data.type;
+                            
+                            if (type === 'text') {
+                                this.content = content;
+                                this.displayedContent = {
+                                    type: 'text',
+                                    content: content
+                                };
+                                this.showToast('✅ Text načten podle kódu');
+                            } else if (type === 'image') {
+                                this.selectedFile = content;
+                                this.displayedContent = {
+                                    type: 'image',
+                                    content: content
+                                };
+                                this.showToast('✅ Obrázek načten podle kódu');
+                            }
+                            
+                            this.liveMessage = `Obsah typu ${type} byl načten podle kódu`;
+                            
+                            // Vyčisti pole s kódem
+                            this.viewCode = '';
+                        } else {
+                            throw new Error(data.error || 'Obsah nenalezen');
+                        }
+                    } catch (error) {
+                        console.error('❌ Chyba při načítání podle kódu:', error);
+                        this.showToast('Chyba: ' + error.message, true);
+                    } finally {
+                        this.setLoading(false);
+                    }
                 },
 
                 /**
@@ -2338,8 +2649,8 @@
                         this.compressionEnabled = false;
                     }
                     
-                    // Načtení obsahu z URL hash při startu
-                    this.loadFromUrlHash();
+                    // Načtení obsahu z URL (hash nebo query parametr ?id=)
+                    this.loadFromUrl();
                     
                     // ==============================================
                     // WATCHERS - Automatické generování QR kódu
@@ -2667,411 +2978,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Custom CSS for better UX -->
-    <style>
-        [x-cloak] { display: none !important; }
-       
-        /* Enhanced button interactions for school environment */
-        .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1rem;
-            border: 1px solid transparent;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: 0.375rem;
-            color: white;
-            background-color: #2563eb;
-            min-height: 44px;
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-        }
-        
-        .btn-secondary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1rem;
-            border: 1px solid #d1d5db;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: 0.375rem;
-            color: #374151;
-            background-color: white;
-            min-height: 44px;
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #f9fafb;
-        }
-        
-        .btn-success {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1rem;
-            border: 1px solid transparent;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: 0.375rem;
-            color: white;
-            background-color: #16a34a;
-            min-height: 44px;
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .btn-success:hover {
-            background-color: #15803d;
-        }
-        
-        .btn-danger {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1rem;
-            border: 1px solid transparent;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: 0.375rem;
-            color: white;
-            background-color: #dc2626;
-            min-height: 44px;
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .btn-danger:hover {
-            background-color: #dc0000;
-        }
-        
-        /* Clear button specific styling */
-        .btn-clear:hover {
-            background-color: #dc0000;
-            color: #ffffff;
-            border-color: #7c0000;
-        }
-        
-        /* Loading states for better UX feedback */
-        .btn-loading {
-            position: relative;
-            color: transparent !important;
-            pointer-events: none;
-        }
-        
-        .btn-loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 16px;
-            height: 16px;
-            border: 2px solid transparent;
-            border-top: 2px solid currentColor;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            color: white;
-        }
-        
-        /* High contrast mode for accessibility */
-        @media (prefers-contrast: high) {
-            .border-gray-300 {
-                border-color: #000 !important;
-                border-width: 2px !important;
-            }
-            .text-gray-500 {
-                color: #000 !important;
-            }
-            .text-gray-700 {
-                color: #000 !important;
-            }
-            .bg-gray-50 {
-                background-color: #f5f5f5 !important;
-            }
-        }
-        
-        /* Better error and success states */
-        .input-error {
-            border-color: #dc2626;
-            background-color: #fef2f2;
-        }
-        
-        .input-error:focus {
-            border-color: #dc2626;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-        }
-        
-        .input-success {
-            border-color: #16a34a;
-            background-color: #f0fdf4;
-        }
-        
-        .input-success:focus {
-            border-color: #16a34a;
-            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-        }
-        
-        /* QR Code styling */
-        .qr-container {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border: 3px solid #e2e8f0;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* TV Mode optimizations for classroom display */
-        .tv-mode {
-            font-family: 'Courier New', monospace;
-            line-height: 1.6;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-        }
-        
-        .tv-mode .text-content {
-            font-size: clamp(1.5rem, 5vw, 4rem);
-            font-weight: 600;
-            letter-spacing: 0.025em;
-        }
-        
-        /* Improved drag and drop visual feedback */
-        .drag-over {
-            border-color: #2563eb;
-            background-color: #eff6ff;
-            border-style: solid;
-            animation: pulse 2s infinite;
-        }
-        
-        /* Better toast positioning and styling */
-        .toast-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-        
-        .toast-error {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
-        
-        /* Mobile optimizations for school tablets */
-        @media (max-width: 640px) {
-            .prose pre {
-                font-size: 0.875rem;
-                padding: 0.75rem;
-                overflow-x: auto;
-                white-space: pre-wrap;
-                word-break: break-word;
-            }
-            
-            /* Larger touch targets for student use */
-            button, label[role="button"], .clickable {
-                min-height: 48px;
-                min-width: 48px;
-            }
-            
-            /* Better keyboard display on mobile */
-            input[type="text"], textarea {
-                font-size: 16px; /* Prevents zoom on iOS */
-            }
-            
-            /* Enhanced mobile navigation */
-            .mobile-stack {
-                flex-direction: column;
-            }
-            
-            .mobile-full-width {
-                width: 100%;
-            }
-            
-            /* Better spacing on mobile */
-            .mobile-compact {
-                padding: 0.75rem;
-            }
-        }
-        
-        /* Tablet optimizations */
-        @media (min-width: 641px) and (max-width: 1024px) {
-            .tablet-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            /* Optimized for 10-13 inch tablets */
-            .tablet-touch {
-                min-height: 48px;
-                min-width: 48px;
-            }
-        }
-        
-        /* Better touch interactions */
-        @media (hover: none) {
-            .hover-none-bg:hover {
-                background-color: inherit !important;
-            }
-            
-            /* Enhanced tap feedback */
-            .tap-highlight {
-                -webkit-tap-highlight-color: rgba(37, 99, 235, 0.1);
-            }
-        }
-        
-        /* Improved accessibility for touch devices */
-        .touch-enhanced {
-            touch-action: manipulation;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        
-        .touch-enhanced input,
-        .touch-enhanced textarea {
-            -webkit-user-select: text;
-            user-select: text;
-        }
-        
-        /* PWA and mobile app enhancements */
-        @media (display-mode: standalone) {
-            body {
-                padding-top: env(safe-area-inset-top);
-                padding-bottom: env(safe-area-inset-bottom);
-            }
-        }
-        
-        /* Better focus indicators for accessibility */
-        .focus-visible-enhanced:focus-visible {
-            outline: 3px solid #2563eb;
-            outline-offset: 2px;
-            box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.1);
-        }
-        
-        /* Loading state improvements */
-        .loading-pulse {
-            animation: pulse 2s infinite;
-        }
-        
-        .loading-shimmer {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-        
-        /* Error and success states with better contrast */
-        .state-error {
-            background-color: #fef2f2;
-            border-color: #dc2626;
-            color: #991b1b;
-        }
-        
-        .state-success {
-            background-color: #f0fdf4;
-            border-color: #16a34a;
-            color: #15803d;
-        }
-        
-        .state-warning {
-            background-color: #fffbeb;
-            border-color: #d97706;
-            color: #92400e;
-        }
-        
-        /* Print styles for homework/notes */
-        @media print {
-            .no-print, button, .sticky, header, footer {
-                display: none !important;
-            }
-            
-            body {
-                background: white !important;
-                color: black !important;
-            }
-            
-            .section-header {
-                border-left: 4px solid #000;
-                page-break-after: avoid;
-            }
-            
-            .content-display {
-                font-family: 'Times New Roman', serif;
-                font-size: 12pt;
-                line-height: 1.5;
-                page-break-inside: avoid;
-            }
-        }
-        
-        /* Reduced motion for sensitive users */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-        
-        /* Focus management for keyboard navigation */
-        .focus-trap:focus-within {
-            outline: 3px solid #2563eb;
-            outline-offset: 2px;
-        }
-        
-        /* Better visual hierarchy for classroom settings */
-        .card-elevated {
-            box-shadow: 
-                0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                0 2px 4px -1px rgba(0, 0, 0, 0.06),
-                0 0 0 1px rgba(0, 0, 0, 0.05);
-        }
-        
-        .card-elevated:hover {
-            box-shadow: 
-                0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                0 4px 6px -2px rgba(0, 0, 0, 0.05),
-                0 0 0 1px rgba(0, 0, 0, 0.08);
-            transform: translateY(-1px);
-        }
-        
-        /* Status indicators */
-        .status-online {
-            background-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-        }
-        
-        .status-offline {
-            background-color: #ef4444;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-        }
-        
-        /* Animation keyframes */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        @keyframes bounce-in {
-            0% { transform: scale(0.3) translateY(-50px); opacity: 0; }
-            50% { transform: scale(1.05) translateY(-10px); }
-            70% { transform: scale(0.9) translateY(0); }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        
-        @keyframes slide-up {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        /* Utility classes for dynamic styling */
-        .reveal {
-            animation: bounce-in 0.6s ease-out;
-        }
-        
-        .slide-up {
-            animation: slide-up 0.4s ease-out;
-        }
-    </style>
 </body>
 </html>
