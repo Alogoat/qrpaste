@@ -521,7 +521,7 @@
                 <div class="text-center">
                     <button
                         type="button"
-                        @click="view = 'admin'"
+                        @click="view = 'admin'; clearAll()"
                         class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 transition-colors shadow-lg transform hover:scale-105"
                     >
                         <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2144,10 +2144,16 @@
                                 const success = this.updateUrlHash(this.content, 'text');
                                 
                                 if (!success) {
-                                    // URL je příliš dlouhá
-                                    console.warn('⚠️ URL je příliš dlouhá, zobrazuji varování');
-                                    this.showToast('❌ Obsah je příliš velký pro URL režim. Přepněte na databázový režim.', true);
-                                    this.urlTooLong = true;
+                                    // URL je příliš dlouhá - automaticky přepni na databázový režim
+                                    console.warn('⚠️ URL je příliš dlouhá, automaticky přepínám na databázový režim');
+                                    this.showToast('🔄 Obsah je moc velký pro URL - přepínám na Databázový režim...', false, 2000);
+                                    this.mode = 'database';
+                                    this.urlTooLong = false;
+                                    
+                                    // Zavolej generateShare znovu s databázovým režimem
+                                    setTimeout(() => {
+                                        this.generateShare();
+                                    }, 500);
                                     return;
                                 }
                                 
@@ -2176,10 +2182,16 @@
                                 const success = this.updateUrlHash(imageData, 'image');
                                 
                                 if (!success) {
-                                    // URL je příliš dlouhá - obrázky jsou většinou větší
-                                    console.warn('⚠️ Obrázek je příliš velký pro URL');
-                                    this.showToast('❌ Obrázek je příliš velký pro URL režim. Zkuste menší obrázek nebo použijte databázový režim.', true);
-                                    this.urlTooLong = true;
+                                    // URL je příliš dlouhá - automaticky přepni na databázový režim
+                                    console.warn('⚠️ Obrázek je příliš velký pro URL, automaticky přepínám na databázový režim');
+                                    this.showToast('🔄 Obrázek je moc velký pro URL - přepínám na Databázový režim...', false, 2000);
+                                    this.mode = 'database';
+                                    this.urlTooLong = false;
+                                    
+                                    // Zavolej generateShare znovu s databázovým režimem
+                                    setTimeout(() => {
+                                        this.generateShare();
+                                    }, 500);
                                     return;
                                 }
                                 
