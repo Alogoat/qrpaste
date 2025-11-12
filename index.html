@@ -209,10 +209,28 @@
          role="status" 
          aria-label="Načítání"
          aria-live="polite">
-        <div class="bg-white rounded-lg p-6 shadow-lg">
-            <div class="flex items-center space-x-3">
+        <div class="bg-white rounded-lg p-6 shadow-lg max-w-sm w-full mx-4">
+            <div class="flex items-center space-x-3 mb-4">
                 <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600" aria-hidden="true"></div>
                 <span class="text-gray-700 font-medium">Zpracovávám...</span>
+            </div>
+            
+            <!-- Progress Bar (zobrazí se při uploadu) -->
+            <div x-show="showProgress" class="w-full">
+                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                    <span x-text="uploadProgress < 50 ? 'Načítání...' : 'Komprese...'"></span>
+                    <span x-text="uploadProgress + '%'"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                        class="bg-primary-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                        :style="'width: ' + uploadProgress + '%'"
+                        role="progressbar"
+                        :aria-valuenow="uploadProgress"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                    ></div>
+                </div>
             </div>
         </div>
     </div>
@@ -397,9 +415,30 @@
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                         QRPaste
                     </h1>
-                    <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                    <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-6">
                         Rychlé sdílení textu, kódu a obrázků pomocí QR kódů
                     </p>
+                    
+                    <!-- Quick tutorial cards pro studenty -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-8">
+                        <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 text-left">
+                            <div class="text-3xl mb-2">📱</div>
+                            <h3 class="font-semibold text-blue-900 mb-1">1. Naskenuj QR</h3>
+                            <p class="text-sm text-blue-700">Použij fotoaparát na telefonu</p>
+                        </div>
+                        
+                        <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-left">
+                            <div class="text-3xl mb-2">🔤</div>
+                            <h3 class="font-semibold text-green-900 mb-1">2. Zadej kód</h3>
+                            <p class="text-sm text-green-700">Nebo zapiš 6-znakový kód</p>
+                        </div>
+                        
+                        <div class="bg-purple-50 border-2 border-purple-200 rounded-lg p-4 text-left">
+                            <div class="text-3xl mb-2">➕</div>
+                            <h3 class="font-semibold text-purple-900 mb-1">3. Vytvoř vlastní</h3>
+                            <p class="text-sm text-purple-700">Klikni na zelené tlačítko níže</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Zobrazit obsah podle kódu -->
@@ -591,8 +630,8 @@
                        
                         <!-- Drag & Drop Area -->
                         <div 
-                            class="flex justify-center px-4 py-6 sm:px-6 sm:py-8 border-2 border-dashed rounded-md smooth-transition touch-manipulation"
-                            :class="isDragging ? 'border-primary-500 bg-primary-50 scale-105' : 'border-gray-300 hover:border-gray-400'"
+                            class="flex justify-center px-4 py-6 sm:px-6 sm:py-8 border-2 border-dashed rounded-md smooth-transition touch-manipulation relative overflow-hidden"
+                            :class="isDragging ? 'border-primary-500 bg-primary-50 scale-[1.02] shadow-lg' : 'border-gray-300 hover:border-gray-400'"
                             @drop="handleDrop($event)"
                             @dragover.prevent="isDragging = true"
                             @dragenter.prevent="isDragging = true"
@@ -603,26 +642,45 @@
                             @keydown.enter="$refs.fileInput?.click()"
                             @keydown.space.prevent="$refs.fileInput?.click()"
                         >
-                            <div class="space-y-2 text-center">
+                            <!-- Animated background when dragging -->
+                            <div 
+                                x-show="isDragging" 
+                                class="absolute inset-0 bg-gradient-to-br from-primary-100 to-blue-50 animate-pulse pointer-events-none"
+                                aria-hidden="true"
+                            ></div>
+                            
+                            <div class="space-y-2 text-center relative z-10">
                                 <svg class="mx-auto h-10 w-10 sm:h-12 sm:w-12 smooth-transition" 
-                                     :class="isDragging ? 'text-primary-500' : 'text-gray-400'"
+                                     :class="isDragging ? 'text-primary-600 scale-110' : 'text-gray-400'"
                                      stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                <p class="text-sm smooth-transition" 
-                                   :class="isDragging ? 'text-primary-700 font-semibold' : 'text-gray-600'">
-                                    <span x-show="!isDragging">Přetáhněte obrázek sem nebo použijte tlačítka výše</span>
-                                    <span x-show="isDragging" class="text-primary-600">📎 Pusťte zde pro nahrání</span>
-                                </p>
-                                <p id="file-upload-help" class="text-xs text-gray-500">
-                                    PNG, JPG, GIF do 10MB (automaticky zkomprimováno)<br>
-                                    <span class="inline-flex items-center gap-1 mt-1 text-blue-600 ctrlv-hint">
+                                
+                                <!-- Text content -->
+                                <div x-show="!isDragging">
+                                    <p class="text-sm text-gray-600">
+                                        Přetáhněte obrázek sem nebo použijte tlačítka výše
+                                    </p>
+                                    <p id="file-upload-help" class="text-xs text-gray-500 mt-2">
+                                        PNG, JPG, GIF do 10MB (automaticky zkomprimováno)
+                                    </p>
+                                    <p class="inline-flex items-center gap-1 mt-2 text-blue-600 ctrlv-hint text-xs">
                                         <kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">Ctrl</kbd>
                                         +
                                         <kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">V</kbd>
                                         = Vložit screenshot
-                                    </span>
-                                </p>
+                                    </p>
+                                </div>
+                                
+                                <!-- Dragging state -->
+                                <div x-show="isDragging" class="animate-bounce">
+                                    <p class="text-lg font-bold text-primary-700">
+                                        📎 Pusťte zde pro nahrání!
+                                    </p>
+                                    <p class="text-sm text-primary-600 mt-1">
+                                        Obrázek bude automaticky zkomprimován
+                                    </p>
+                                </div>
                             </div>
                         </div>
                        
@@ -729,13 +787,21 @@
                         type="button"
                         @click="generateShare"
                         :disabled="!content.trim() && !selectedFile && !capturedImage"
-                        class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-600 transition-colors min-h-touch touch-manipulation"
+                        class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-600 transition-colors min-h-touch touch-manipulation relative group"
                         aria-describedby="generate-help"
                     >
                         <svg class="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
-                        Vygenerovat QR , URL a kód
+                        Vygenerovat QR, URL a kód
+                        
+                        <!-- Tooltip při disabled -->
+                        <span 
+                            x-show="!content.trim() && !selectedFile && !capturedImage"
+                            class="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10"
+                        >
+                            ⚠️ Nejdříve vložte text nebo obrázek
+                        </span>
                     </button>
                     
                     <button
@@ -748,7 +814,9 @@
                         Vymazat vše
                     </button>
                 </div>
-                <p id="generate-help" class="text-xs text-gray-500 mt-2">Vložte text, nahrajte nebo vyfotografujte obrázek pro vygenerování QR kódu, URL a kódu</p>
+                <p id="generate-help" class="text-xs text-gray-500 mt-2">
+                    💡 Vložte text, nahrajte nebo vyfotografujte obrázek pro vygenerování QR kódu
+                </p>
                 
                 <!-- URL Too Long Warning -->
                 <div x-show="urlTooLong" 
@@ -826,16 +894,17 @@
                                     type="text"
                                     :value="generatedUrl"
                                     readonly
-                                    class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-l-md text-sm focus:outline-none"
+                                    class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-l-md text-sm focus:outline-none select-all"
                                     aria-label="Vygenerovaná URL"
+                                    @click="$event.target.select()"
                                 >
                                 <button
                                     type="button"
                                     @click="copyToClipboard(generatedUrl)"
-                                    class="px-4 py-2 bg-primary-600 text-white border border-primary-600 rounded-r-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                                    class="px-4 py-2 bg-primary-600 text-white border border-primary-600 rounded-r-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all min-w-[80px] font-medium"
                                     aria-label="Kopírovat URL"
                                 >
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="h-5 w-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                     </svg>
                                 </button>
@@ -849,21 +918,22 @@
                                         type="text"
                                         :value="shareCode"
                                         readonly
-                                        class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-l-md text-lg font-mono text-center focus:outline-none"
+                                        class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-l-md text-lg font-mono text-center focus:outline-none uppercase select-all"
                                         aria-label="Kód pro sdílení"
+                                        @click="$event.target.select()"
                                     >
                                     <button
                                         type="button"
                                         @click="copyToClipboard(shareCode)"
-                                        class="px-4 py-2 bg-green-600 text-white border border-green-600 rounded-r-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+                                        class="px-4 py-2 bg-success-600 text-white border border-success-600 rounded-r-md hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-success-500 transition-all min-w-[80px] font-medium"
                                         aria-label="Kopírovat kód"
                                     >
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="h-5 w-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                         </svg>
                                     </button>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">Kód pro sdílení</p>
+                                <p class="text-xs text-gray-500 mt-1 text-center">📋 Klikněte pro zkopírování</p>
                             </div>
                         </div>
                     </div>
@@ -1073,17 +1143,6 @@
     </div>
 
 
-    <!-- Toast/Notification -->
-    <div
-        x-show="toast.show"
-        x-transition
-        class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-40"
-        x-cloak
-    >
-        <p x-text="toast.message"></p>
-    </div>
-
-
     <!-- ============================================
          HLAVNÍ APLIKAČNÍ LOGIKA (Alpine.js)
          Obsahuje všechny funkce a reaktivní data
@@ -1127,6 +1186,8 @@
                 cameraAvailable: false, // Kamera dostupná a funguje
                 cameraStream: null, // MediaStream z kamery
                 loading: false, // Zobrazit loading overlay
+                uploadProgress: 0, // Progress bar pro upload (0-100)
+                showProgress: false, // Zobrazit progress bar
                 liveMessage: '', // Zpráva pro screen readery (přístupnost)
                 urlTooLong: false, // URL překročila limit
                 compressionEnabled: true, // Povolit LZ-String kompresi
@@ -1460,34 +1521,71 @@
                         
                         console.log('🔍 Stahování z backendu, ID:', id);
                         
-                        const response = await fetch(`./backend.php?action=get&id=${id}`);
-                        const data = await response.json();
+                        // AbortController pro timeout (15 sekund pro GET)
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
                         
-                        if (data.success) {
-                            console.log('✅ Obsah načten z databáze:', data.data);
+                        try {
+                            const response = await fetch(`backend.php?action=get&id=${id}`, {
+                                signal: controller.signal
+                            });
                             
-                            const content = data.data.content;
-                            const type = data.data.type;
+                            clearTimeout(timeoutId);
                             
-                            if (type === 'text') {
-                                this.content = content;
-                                this.displayedContent = {
-                                    type: 'text',
-                                    content: content
-                                };
-                                this.showToast('✅ Text načten z databáze');
-                            } else if (type === 'image') {
-                                this.selectedFile = content;
-                                this.displayedContent = {
-                                    type: 'image',
-                                    content: content
-                                };
-                                this.showToast('✅ Obrázek načten z databáze');
+                            // Kontrola HTTP status
+                            if (!response.ok) {
+                                if (response.status === 404) {
+                                    throw new Error('Kód nenalezen nebo vypršel');
+                                } else if (response.status === 410) {
+                                    throw new Error('Obsah vypršel');
+                                } else if (response.status === 401 || response.status === 403) {
+                                    throw new Error('Přístup odepřen - vyžadováno heslo');
+                                } else if (response.status === 500) {
+                                    throw new Error('Chyba serveru');
+                                } else {
+                                    throw new Error(`HTTP chyba: ${response.status}`);
+                                }
                             }
                             
-                            this.liveMessage = `Obsah typu ${type} byl načten z databáze`;
-                        } else {
-                            throw new Error(data.error || 'Nepodařilo se načíst obsah');
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                console.log('✅ Obsah načten z databáze:', data.data);
+                                
+                                const content = data.data.content;
+                                const type = data.data.type;
+                                
+                                if (type === 'text') {
+                                    this.content = content;
+                                    this.displayedContent = {
+                                        type: 'text',
+                                        content: content
+                                    };
+                                    this.showToast('✅ Text načten z databáze');
+                                } else if (type === 'image') {
+                                    this.selectedFile = content;
+                                    this.displayedContent = {
+                                        type: 'image',
+                                        content: content
+                                    };
+                                    this.showToast('✅ Obrázek načten z databáze');
+                                }
+                                
+                                this.liveMessage = `Obsah typu ${type} byl načten z databáze`;
+                            } else {
+                                throw new Error(data.error || 'Nepodařilo se načíst obsah');
+                            }
+                        } catch (error) {
+                            clearTimeout(timeoutId);
+                            
+                            // Specifické error messages
+                            if (error.name === 'AbortError') {
+                                throw new Error('⏱️ Timeout: Server neodpovídá (15s)');
+                            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                                throw new Error('🌐 Chyba sítě: Zkontrolujte připojení');
+                            } else {
+                                throw error;
+                            }
                         }
                     } catch (error) {
                         console.error('❌ Chyba při načítání z databáze:', error);
@@ -1765,9 +1863,21 @@
                     }
 
                     console.log(`✅ Validace OK: ${file.name} (${(file.size/1024).toFixed(1)}KB)`);
+                    
+                    // Zobraz progress bar
+                    this.showProgress = true;
+                    this.uploadProgress = 0;
                     this.setLoading(true);
                     
                     const reader = new FileReader();
+                    
+                    // Progress události pro FileReader
+                    reader.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            this.uploadProgress = Math.round((e.loaded / e.total) * 50); // 0-50% pro načítání
+                            console.log(`📊 Načítání: ${this.uploadProgress}%`);
+                        }
+                    };
                     
                     reader.onload = async (e) => {
                         // Validace dat URL formátu
@@ -1776,30 +1886,44 @@
                             console.error('❌ Neplatný data URL formát');
                             this.showToast('Chyba při načítání obrázku - neplatný formát', true);
                             this.setLoading(false);
+                            this.showProgress = false;
                             this.resetFileInput();
                             return;
                         }
                         
+                        // Načtení hotové - pokračuj kompresí
+                        this.uploadProgress = 50;
+                        
                         try {
                             // ✨ AUTOMATICKÁ KOMPRESE A RESIZE
                             const compressed = await this.compressImage(result, 800, 0.8);
-                            this.selectedFile = compressed;
+                            this.uploadProgress = 100; // Hotovo
                             
-                            const finalSize = Math.round(compressed.length / 1024);
-                            this.setLoading(false);
-                            this.showToast(`✅ Obrázek nahrán a zkomprimován (${finalSize}KB)`);
+                            setTimeout(() => {
+                                this.selectedFile = compressed;
+                                
+                                const finalSize = Math.round(compressed.length / 1024);
+                                this.setLoading(false);
+                                this.showProgress = false;
+                                this.showToast(`✅ Obrázek nahrán (${finalSize}KB)`);
+                            }, 300); // Krátké zobrazení 100%
                         } catch (error) {
                             console.error('❌ Chyba při kompresi:', error);
                             // Fallback - použij nekomprimovaný obrázek
-                            this.selectedFile = result;
-                            this.setLoading(false);
-                            this.showToast(`✅ Obrázek nahrán (${(file.size/1024).toFixed(1)}KB)`);
+                            this.uploadProgress = 100;
+                            setTimeout(() => {
+                                this.selectedFile = result;
+                                this.setLoading(false);
+                                this.showProgress = false;
+                                this.showToast(`✅ Obrázek nahrán (${(file.size/1024).toFixed(1)}KB)`);
+                            }, 300);
                         }
                     };
                     
                     reader.onerror = (error) => {
                         console.error('❌ FileReader error:', error);
                         this.setLoading(false);
+                        this.showProgress = false;
                         this.showToast('Chyba při načítání obrázku', true);
                         this.resetFileInput();
                     };
@@ -1808,6 +1932,7 @@
                     const readTimeout = setTimeout(() => {
                         reader.abort();
                         this.setLoading(false);
+                        this.showProgress = false;
                         this.showToast('Načítání souboru trvalo příliš dlouho', true);
                         this.resetFileInput();
                     }, 30000);
@@ -2013,7 +2138,7 @@
                  * Generování sdílení (URL režim)
                  * Bezpečná validace a zpracování obsahu
                  */
-                generateShare() {
+                async generateShare() {
                     console.log('🚀 generateShare() volána');
                     console.log('Mode:', this.mode);
                     
@@ -2132,20 +2257,44 @@
                             
                             console.log(`📤 Odesílám na server: typ=${contentType}, velikost=${validation.sizeKB}KB`);
                             
-                            // Odeslání na backend
-                            fetch('./backend.php?action=save', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    content: contentToSave,
-                                    content_type: contentType,
-                                    expires_days: 7
-                                })
-                            })
-                            .then(response => response.json())
-                            .then(data => {
+                            // AbortController pro timeout (30 sekund pro POST)
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 30000);
+                            
+                            try {
+                                // Odeslání na backend
+                                const response = await fetch('backend.php?action=save', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        content: contentToSave,
+                                        content_type: contentType,
+                                        expires_days: 7
+                                    }),
+                                    signal: controller.signal
+                                });
+                                
+                                clearTimeout(timeoutId);
+                                
+                                // Kontrola HTTP status
+                                if (!response.ok) {
+                                    if (response.status === 404) {
+                                        throw new Error('Backend není dostupný (404)');
+                                    } else if (response.status === 500) {
+                                        throw new Error('Chyba serveru (500)');
+                                    } else if (response.status === 413) {
+                                        throw new Error('Obsah je příliš velký');
+                                    } else if (response.status === 429) {
+                                        throw new Error('Příliš mnoho požadavků, zkuste později');
+                                    } else {
+                                        throw new Error(`HTTP chyba: ${response.status}`);
+                                    }
+                                }
+                                
+                                const data = await response.json();
+                                
                                 if (data.success) {
                                     console.log('✅ Uloženo na server:', data.data);
                                     
@@ -2167,11 +2316,19 @@
                                 } else {
                                     throw new Error(data.error || 'Nepodařilo se uložit na server');
                                 }
-                            })
-                            .catch(error => {
+                            } catch (error) {
+                                clearTimeout(timeoutId);
                                 console.error('❌ Chyba při ukládání na server:', error);
-                                this.showToast('Chyba při ukládání: ' + error.message, true);
-                            });
+                                
+                                // Specifické error messages
+                                if (error.name === 'AbortError') {
+                                    this.showToast('⏱️ Timeout: Server neodpovídá (30s)', true);
+                                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                                    this.showToast('🌐 Chyba sítě: Zkontrolujte připojení k internetu', true);
+                                } else {
+                                    this.showToast('❌ Chyba: ' + error.message, true);
+                                }
+                            }
                         }
                     } catch (error) {
                         console.error('❌ Chyba při generování:', error);
@@ -2419,42 +2576,79 @@
                     try {
                         this.setLoading(true);
                         
-                        // Načtení z databáze podle ID
-                        const response = await fetch(`./backend.php?action=get&id=${code}`);
-                        const data = await response.json();
+                        // AbortController pro timeout (15 sekund pro GET)
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
                         
-                        if (data.success) {
-                            console.log('✅ Obsah načten:', data.data);
+                        try {
+                            // Načtení z databáze podle ID
+                            const response = await fetch(`backend.php?action=get&id=${code}`, {
+                                signal: controller.signal
+                            });
                             
-                            const content = data.data.content;
-                            const type = data.data.type;
+                            clearTimeout(timeoutId);
                             
-                            if (type === 'text') {
-                                this.content = content;
-                                this.displayedContent = {
-                                    type: 'text',
-                                    content: content
-                                };
-                                this.showToast('✅ Text načten podle kódu');
-                            } else if (type === 'image') {
-                                this.selectedFile = content;
-                                this.displayedContent = {
-                                    type: 'image',
-                                    content: content
-                                };
-                                this.showToast('✅ Obrázek načten podle kódu');
+                            // Kontrola HTTP status
+                            if (!response.ok) {
+                                if (response.status === 404) {
+                                    throw new Error('Kód nenalezen nebo vypršel');
+                                } else if (response.status === 410) {
+                                    throw new Error('Obsah vypršel');
+                                } else if (response.status === 401 || response.status === 403) {
+                                    throw new Error('Přístup odepřen - vyžadováno heslo');
+                                } else if (response.status === 500) {
+                                    throw new Error('Chyba serveru');
+                                } else {
+                                    throw new Error(`HTTP chyba: ${response.status}`);
+                                }
                             }
                             
-                            this.liveMessage = `Obsah typu ${type} byl načten podle kódu`;
+                            const data = await response.json();
                             
-                            // Vyčisti pole s kódem
-                            this.viewCode = '';
-                        } else {
-                            throw new Error(data.error || 'Obsah nenalezen');
+                            if (data.success) {
+                                console.log('✅ Obsah načten:', data.data);
+                                
+                                const content = data.data.content;
+                                const type = data.data.type;
+                                
+                                if (type === 'text') {
+                                    this.content = content;
+                                    this.displayedContent = {
+                                        type: 'text',
+                                        content: content
+                                    };
+                                    this.showToast('✅ Text načten podle kódu');
+                                } else if (type === 'image') {
+                                    this.selectedFile = content;
+                                    this.displayedContent = {
+                                        type: 'image',
+                                        content: content
+                                    };
+                                    this.showToast('✅ Obrázek načten podle kódu');
+                                }
+                                
+                                this.liveMessage = `Obsah typu ${type} byl načten podle kódu`;
+                                
+                                // Vyčisti pole s kódem
+                                this.viewCode = '';
+                            } else {
+                                throw new Error(data.error || 'Obsah nenalezen');
+                            }
+                        } catch (error) {
+                            clearTimeout(timeoutId);
+                            
+                            // Specifické error messages
+                            if (error.name === 'AbortError') {
+                                throw new Error('⏱️ Timeout: Server neodpovídá (15s)');
+                            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                                throw new Error('🌐 Chyba sítě: Zkontrolujte připojení');
+                            } else {
+                                throw error;
+                            }
                         }
                     } catch (error) {
                         console.error('❌ Chyba při načítání podle kódu:', error);
-                        this.showToast('Chyba: ' + error.message, true);
+                        this.showToast('❌ ' + error.message, true);
                     } finally {
                         this.setLoading(false);
                     }
@@ -2566,7 +2760,7 @@
                  * 
                  * Funkce:
                  * - Auto-close po určité době (výchozí 3s)
-                 * - Hover pause - při najetí myší se timer zastaví
+                 * - ANTI-OVERLAP: Zavře předchozí toast před zobrazením nového
                  * - Ruční zavření - tlačítko ❌
                  * - duration=0 → pouze ruční zavření
                  * 
@@ -2582,7 +2776,7 @@
                  * showToast("Úspěšně uloženo") → zelený toast na 3s
                  * showToast("Chyba!", true, 5000) → červený toast na 5s
                  * 
-                 * Zobrazení toast notifikace
+                 * Zobrazení toast notifikace s anti-overlap ochranou
                  * @param {string} message - Zpráva k zobrazení
                  * @param {boolean} isError - Je to chybová zpráva?
                  * @param {number} duration - Doba zobrazení v ms (0 = neautomaticky zavírat)
@@ -2594,11 +2788,13 @@
                         this._toastTimeout = null;
                     }
                     
+                    // ⚡ OKAMŽITÉ NAHRAZENÍ: Aktualizuj zprávu a zobraz/obnov
+                    // Toto zabraňuje překrývání tím, že používá stejný toast element
                     this.toast.message = message;
                     this.toast.error = isError;
                     this.toast.show = true;
                     
-                    // Automatické skrytí pouze pokud je nastavena duration > 0
+                    // Nastavení auto-close
                     if (duration > 0) {
                         this._toastTimeout = setTimeout(() => {
                             this.toast.show = false;
@@ -2695,6 +2891,22 @@
                     // ==============================================
                     // WATCHERS - Automatické generování QR kódu
                     // ==============================================
+                    
+                    // Sledování změny REŽIMU (URL vs Database)
+                    this.$watch('mode', (newMode, oldMode) => {
+                        console.log(`🔄 Režim změněn: ${oldMode} → ${newMode}`);
+                        
+                        // Pokud už existuje vygenerovaný obsah, regeneruj QR automaticky
+                        if (this.generatedUrl && (this.content.trim() || this.selectedFile || this.capturedImage)) {
+                            console.log('📱 Auto-regenerace QR kódu při změně režimu...');
+                            this.showToast(`Režim změněn na: ${newMode === 'url' ? 'URL' : 'Databáze'}`, false, 2000);
+                            
+                            // Malá pauza pro plynulost
+                            setTimeout(() => {
+                                this.generateShare();
+                            }, 300);
+                        }
+                    });
                     
                     // Sledování změn obsahu textu
                     this.$watch('content', (value) => {
@@ -2982,8 +3194,8 @@
          role="alert"
          aria-live="polite"
          aria-atomic="true"
-         @mouseenter="_toastTimeout && clearTimeout(_toastTimeout)"
-         @mouseleave="toast.show && _toastTimeout === null && showToast(toast.message, toast.error, 3000)">
+         @mouseenter="if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }"
+         @mouseleave="if (toast.show && !_toastTimeout) { _toastTimeout = setTimeout(() => { toast.show = false; _toastTimeout = null; }, 3000); }">
         <div class="rounded-lg shadow-lg overflow-hidden relative"
              :class="{
                  'bg-success-600 text-white': !toast.error,
@@ -3006,7 +3218,7 @@
                     <!-- Close Button -->
                     <button 
                         type="button"
-                        @click="toast.show = false; _toastTimeout && clearTimeout(_toastTimeout)"
+                        @click="toast.show = false; if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }"
                         class="ml-2 flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-white transition-colors"
                         aria-label="Zavřít notifikaci"
                         title="Zavřít (nebo počkejte 3 sekundy)">

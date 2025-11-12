@@ -177,6 +177,26 @@
     animation: slide-out-right 0.2s ease-in;
 }
 
+/* Copy button success animation */
+@keyframes copy-success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); background-color: #10b981; }
+    100% { transform: scale(1); }
+}
+
+.copy-success {
+    animation: copy-success 0.4s ease-in-out;
+}
+
+/* Select all helper */
+.select-all {
+    cursor: pointer;
+}
+
+.select-all:focus {
+    background-color: #dbeafe;
+}
+
 /* ============================================
    KEYBOARD NAVIGATION
    ============================================ */
