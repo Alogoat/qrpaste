@@ -1182,7 +1182,8 @@
                 // Ochrana před útoky a přetížením
                 // ============================================
                 MAX_URL_LENGTH: 2000,  // Bezpečný limit pro většinu prohlížečů (IE: 2048, Chrome: 32k)
-                MAX_CONTENT_SIZE: 50000, // Max velikost obsahu před kompresí (50KB)
+                MAX_TEXT_SIZE: 5 * 1024 * 1024,    // 5 MB pro text
+                MAX_IMAGE_SIZE: 10 * 1024 * 1024,  // 10 MB pro obrázky (base64)
                 
                 // ============================================
                 // RATE LIMITING (OCHRANA PŘED SPAMEM)
@@ -1219,6 +1220,7 @@
                  * 
                  * @param {string} str - Text k zakódování
                  * @param {boolean} compress - Použít LZ kompresi (výchozí: true)
+                 * @param {string} type - Typ obsahu ('text' nebo 'image') pro správnou validaci
                  * @returns {object} - {encoded: string, compressed: boolean, originalSize: number, encodedSize: number}
                  * 
                  * Příklad:
@@ -1229,15 +1231,21 @@
                  * Správně zpracovává UTF-8 znaky včetně emoji
                  * @param {string} str - Text k zakódování
                  * @param {boolean} compress - Použít LZ kompresi (výchozí: true)
+                 * @param {string} type - Typ obsahu ('text' nebo 'image')
                  * @returns {object} - {encoded: string, compressed: boolean, originalSize: number, encodedSize: number}
                  */
-                encodeToBase64(str, compress = true) {
+                encodeToBase64(str, compress = true, type = 'text') {
                     try {
                         const originalSize = str.length;
                         
-                        // Kontrola velikosti obsahu
-                        if (originalSize > this.MAX_CONTENT_SIZE) {
-                            throw new Error(`Obsah je příliš velký (${Math.round(originalSize/1024)}KB). Maximum je ${Math.round(this.MAX_CONTENT_SIZE/1024)}KB.`);
+                        // Kontrola velikosti obsahu podle typu
+                        const maxSize = type === 'image' ? this.MAX_IMAGE_SIZE : this.MAX_TEXT_SIZE;
+                        if (originalSize > maxSize) {
+                            const maxSizeLabel = (maxSize / (1024 * 1024)).toFixed(0) + 'MB';
+                            const currentSizeLabel = originalSize > 1024 * 1024 
+                                ? (originalSize / (1024 * 1024)).toFixed(2) + 'MB'
+                                : (originalSize / 1024).toFixed(0) + 'KB';
+                            throw new Error(`Obsah je příliš velký (${currentSizeLabel}). Maximum je ${maxSizeLabel}.`);
                         }
                         
                         let dataToEncode = str;
@@ -1390,7 +1398,7 @@
                  */
                 updateUrlHash(content, type = 'text') {
                     try {
-                        const result = this.encodeToBase64(content, this.compressionEnabled);
+                        const result = this.encodeToBase64(content, this.compressionEnabled, type);
                         
                         if (!result) {
                             return false;
@@ -1756,25 +1764,39 @@
                 },
 
                 /**
-                 * Limitování velikosti textového obsahu
+                 * Limitování velikosti obsahu podle typu
+                 * @param {string} content - Obsah k validaci
+                 * @param {string} type - Typ obsahu ('text' nebo 'image')
                  */
-                validateContentSize(content) {
+                validateContentSize(content, type = 'text') {
                     if (!content || typeof content !== 'string') {
                         return { valid: true, size: 0 };
                     }
                     
                     const size = content.length;
                     const sizeKB = (size / 1024).toFixed(1);
+                    const sizeMB = (size / (1024 * 1024)).toFixed(2);
                     
-                    if (size > this.MAX_CONTENT_SIZE) {
+                    // Určení limitu podle typu
+                    let maxSize, maxSizeLabel;
+                    if (type === 'image') {
+                        maxSize = this.MAX_IMAGE_SIZE;
+                        maxSizeLabel = (maxSize / (1024 * 1024)).toFixed(0) + 'MB';
+                    } else {
+                        maxSize = this.MAX_TEXT_SIZE;
+                        maxSizeLabel = (maxSize / (1024 * 1024)).toFixed(0) + 'MB';
+                    }
+                    
+                    if (size > maxSize) {
+                        const currentSizeLabel = size > 1024 * 1024 ? sizeMB + 'MB' : sizeKB + 'KB';
                         return {
                             valid: false,
                             size: size,
-                            message: `Obsah je příliš velký (${sizeKB}KB). Maximum je ${(this.MAX_CONTENT_SIZE/1024).toFixed(0)}KB.`
+                            message: `Obsah je příliš velký (${currentSizeLabel}). Maximum je ${maxSizeLabel}.`
                         };
                     }
                     
-                    return { valid: true, size: size, sizeKB: sizeKB };
+                    return { valid: true, size: size, sizeKB: sizeKB, sizeMB: sizeMB };
                 },
 
                 // ==============================================
@@ -2130,7 +2152,7 @@
                                 console.log('📝 Generuji sdílení pro text...');
                                 
                                 // Validace velikosti obsahu
-                                const validation = this.validateContentSize(this.content);
+                                const validation = this.validateContentSize(this.content, 'text');
                                 if (!validation.valid) {
                                     console.error('Obsah příliš velký:', validation.message);
                                     this.showToast(validation.message, true);
@@ -2238,15 +2260,18 @@
                                 contentType = 'image';
                             }
                             
-                            // Validace velikosti
-                            const validation = this.validateContentSize(contentToSave);
+                            // Validace velikosti podle typu
+                            const validation = this.validateContentSize(contentToSave, contentType);
                             if (!validation.valid) {
                                 console.error('❌ Obsah příliš velký:', validation.message);
                                 this.showToast(validation.message, true);
                                 return;
                             }
                             
-                            console.log(`📤 Odesílám na server: typ=${contentType}, velikost=${validation.sizeKB}KB`);
+                            const sizeLabel = contentType === 'image' 
+                                ? (validation.sizeMB || validation.sizeKB + 'KB')
+                                : validation.sizeKB + 'KB';
+                            console.log(`📤 Odesílám na server: typ=${contentType}, velikost=${sizeLabel}`);
                             
                             // AbortController pro timeout (30 sekund pro POST)
                             const controller = new AbortController();
@@ -2276,7 +2301,9 @@
                                     } else if (response.status === 500) {
                                         throw new Error('Chyba serveru (500)');
                                     } else if (response.status === 413) {
-                                        throw new Error('Obsah je příliš velký');
+                                        // Obsah příliš velký
+                                        const errorData = await response.json().catch(() => ({ error: 'Obsah je příliš velký' }));
+                                        throw new Error(errorData.error || 'Obsah je příliš velký');
                                     } else if (response.status === 429) {
                                         throw new Error('Příliš mnoho požadavků, zkuste později');
                                     } else {
