@@ -346,7 +346,7 @@
                     <button
                         type="button"
                         @click="view = 'home'; clearAll()"
-                        class="inline-flex items-center px-2 sm:px-3 py-2 border border-blue-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press"
+                        class="inline-flex items-center px-2 sm:px-3 py-2 border border-blue-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-blue-200 hover:text-black focus-enhanced smooth-transition min-h-touch min-w-touch justify-center scale-press"
                         aria-label="Vrátit se na homepage"
                     >
                         <svg class="h-4 w-4 sm:mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -425,8 +425,8 @@
                  x-transition:enter-start="opacity-0 transform scale-95"
                  x-transition:enter-end="opacity-100 transform scale-100">
                 
-                <!-- Hero Section -->
-                <div class="text-center mb-8 sm:mb-12">
+                <!-- Hero Section - schová se po zobrazení obsahu -->
+                <div x-show="!displayedContent" class="text-center mb-8 sm:mb-12" x-transition>
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                         QRPaste
                     </h1>
@@ -445,7 +445,7 @@
                         <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-left">
                             <div class="text-3xl mb-2">🔤</div>
                             <h3 class="font-semibold text-green-900 mb-1">2. Zadej kód</h3>
-                            <p class="text-sm text-green-700">Nebo zapiš 8-znakový kód</p>
+                            <p class="text-sm text-green-700">Napiš 8-znakový kód</p>
                         </div>
                         
                         <div class="bg-purple-50 border-2 border-purple-200 rounded-lg p-4 text-left">
@@ -456,8 +456,8 @@
                     </div>
                 </div>
 
-                <!-- Zobrazit obsah podle kódu -->
-                <section class="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 max-w-2xl mx-auto mb-6">
+                <!-- Zobrazit obsah podle kódu - schová se po zobrazení obsahu -->
+                <section x-show="!displayedContent" class="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 max-w-2xl mx-auto mb-6" x-transition>
                     <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 text-center">
                         Zadejte kód sdílení
                     </h2>
@@ -486,7 +486,7 @@
                     </div>
                 </section>
 
-                <!-- Zobrazený obsah na homepage -->
+                <!-- Zobrazený obsah na homepage - zobrazí se po kliknutí na "Zobrazit" -->
                 <section x-show="displayedContent" class="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sm:p-8 max-w-4xl mx-auto mb-6" x-transition>
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Zobrazený obsah</h2>
@@ -517,7 +517,7 @@
                     </div>
                 </section>
 
-                <!-- Vytvořit nové sdílení -->
+                <!-- Vytvořit nové sdílení - VŽDY VIDITELNÉ -->
                 <div class="text-center">
                     <button
                         type="button"
@@ -1827,7 +1827,7 @@
                     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
                     if (file.size > MAX_FILE_SIZE) {
                         const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                        console.error(`❌ Soubor příliš velký: ${sizeMB}MB`);
+                        console.error(`Soubor příliš velký: ${sizeMB}MB`);
                         this.showToast(`Obrázek je příliš velký (${sizeMB}MB). Maximum je 10MB.`, true);
                         this.resetFileInput();
                         return;
@@ -1835,7 +1835,7 @@
 
                     // Validace názvu souboru (základní sanitizace)
                     if (!this.isValidFileName(file.name)) {
-                        console.error('❌ Neplatný název souboru:', file.name);
+                        console.error('Neplatný název souboru:', file.name);
                         this.showToast('Název souboru obsahuje nepovolené znaky', true);
                         this.resetFileInput();
                         return;
@@ -1884,7 +1884,7 @@
                                 const finalSize = Math.round(compressed.length / 1024);
                                 this.setLoading(false);
                                 this.showProgress = false;
-                                this.showToast(`✅ Obrázek nahrán (${finalSize}KB)`);
+                                this.showToast(`Obrázek nahrán (${finalSize}KB)`);
                             }, 300); // Krátké zobrazení 100%
                         } catch (error) {
                             console.error('❌ Chyba při kompresi:', error);
@@ -1894,7 +1894,7 @@
                                 this.selectedFile = result;
                                 this.setLoading(false);
                                 this.showProgress = false;
-                                this.showToast(`✅ Obrázek nahrán (${(file.size/1024).toFixed(1)}KB)`);
+                                this.showToast(`Obrázek nahrán (${(file.size/1024).toFixed(1)}KB)`);
                             }, 300);
                         }
                     };
@@ -1960,13 +1960,13 @@
                                             
                                             const finalSize = Math.round(compressed.length / 1024);
                                             this.setLoading(false);
-                                            this.showToast(`✅ Obrázek vložen ze schránky (${finalSize}KB)`);
+                                            this.showToast(`Obrázek vložen ze schránky (${finalSize}KB)`);
                                         } catch (error) {
-                                            console.error('❌ Chyba při kompresi:', error);
+                                            console.error('Chyba při kompresi:', error);
                                             // Fallback - použij nekomprimovaný
                                             this.selectedFile = e.target.result;
                                             this.setLoading(false);
-                                            this.showToast('✅ Obrázek vložen ze schránky');
+                                            this.showToast('Obrázek vložen ze schránky');
                                         }
                                     };
                                     
@@ -2132,7 +2132,7 @@
                                 // Validace velikosti obsahu
                                 const validation = this.validateContentSize(this.content);
                                 if (!validation.valid) {
-                                    console.error('❌ Obsah příliš velký:', validation.message);
+                                    console.error('Obsah příliš velký:', validation.message);
                                     this.showToast(validation.message, true);
                                     this.setLoading(false);
                                     return;
@@ -2173,7 +2173,7 @@
                                     this.generateQRCode(this.generatedUrl);
                                 });
                                 
-                                this.showToast('✅ URL vygenerována úspěšně');
+                                this.showToast('URL vygenerována úspěšně');
                             } else if (this.selectedFile || this.capturedImage) {
                                 console.log('🖼️ Generuji sdílení pro obrázek...');
                                 
@@ -2211,7 +2211,7 @@
                                     this.generateQRCode(this.generatedUrl);
                                 });
                                 
-                                this.showToast('✅ QR kód vygenerován');
+                                this.showToast('QR kód vygenerován');
                             } else {
                                 console.warn('⚠️ Žádný obsah k vygenerování');
                                 this.showToast('Vložte text nebo obrázek', true);
@@ -2287,7 +2287,7 @@
                                 const data = await response.json();
                                 
                                 if (data.success) {
-                                    console.log('✅ Uloženo na server:', data.data);
+                                    console.log('Uloženo na server:', data.data);
                                     
                                     // Nastav URL s ID z databáze
                                     const shareUrl = window.location.origin + window.location.pathname + '?id=' + data.data.id;
@@ -2303,7 +2303,7 @@
                                         this.generateQRCode(shareUrl);
                                     });
                                     
-                                    this.showToast('✅ Obsah uložen na serveru');
+                                    this.showToast('Obsah uložen na serveru');
                                 } else {
                                     throw new Error(data.error || 'Nepodařilo se uložit na server');
                                 }
@@ -2457,7 +2457,7 @@
                                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                             }
                         } else {
-                            console.log('✅ QR kód vygenerován úspěšně!');
+                            console.log('QR kód vygenerován úspěšně!');
                             console.log('Canvas rozměry:', canvas.width, 'x', canvas.height);
                             
                             // Nastavení ARIA pro accessibility
@@ -2597,7 +2597,7 @@
                             const data = await response.json();
                             
                             if (data.success) {
-                                console.log('✅ Obsah načten:', data.data);
+                                console.log('Obsah načten:', data.data);
                                 
                                 const content = data.data.content;
                                 const type = data.data.type;
@@ -2608,14 +2608,14 @@
                                         type: 'text',
                                         content: content
                                     };
-                                    this.showToast('✅ Text načten podle kódu');
+                                    this.showToast('Text načten podle kódu');
                                 } else if (type === 'image') {
                                     this.selectedFile = content;
                                     this.displayedContent = {
                                         type: 'image',
                                         content: content
                                     };
-                                    this.showToast('✅ Obrázek načten podle kódu');
+                                    this.showToast('Obrázek načten podle kódu');
                                 }
                                 
                                 this.liveMessage = `Obsah typu ${type} byl načten podle kódu`;
@@ -2704,7 +2704,7 @@
                         // Pokus o moderní Clipboard API (vyžaduje HTTPS nebo localhost)
                         if (navigator.clipboard && window.isSecureContext) {
                             await navigator.clipboard.writeText(text);
-                            this.showToast('✅ Zkopírováno do schránky');
+                            this.showToast('Zkopírováno do schránky');
                             console.log('✅ Zkopírováno pomocí Clipboard API');
                             return;
                         }
@@ -2726,20 +2726,20 @@
                         try {
                             const successful = document.execCommand('copy');
                             if (successful) {
-                                this.showToast('✅ Zkopírováno do schránky');
+                                this.showToast('Zkopírováno do schránky');
                                 console.log('✅ Zkopírováno pomocí execCommand (fallback)');
                             } else {
                                 throw new Error('execCommand vrátil false');
                             }
                         } catch (err) {
                             console.error('❌ Fallback kopírování selhalo:', err);
-                            this.showToast('❌ Nepodařilo se zkopírovat', true);
+                            this.showToast('Nepodařilo se zkopírovat', true);
                         } finally {
                             document.body.removeChild(textarea);
                         }
                     } catch (error) {
                         console.error('❌ Chyba při kopírování:', error);
-                        this.showToast('❌ Nepodařilo se zkopírovat', true);
+                        this.showToast('Nepodařilo se zkopírovat', true);
                     }
                 },
 
@@ -3030,7 +3030,7 @@
                                         this.setLoading(false);
                                         
                                         // 🎉 SUCCESS FEEDBACK
-                                        this.showToast(`📸 Screenshot vložen! (${sizeKB}KB)`, false);
+                                        this.showToast(`Screenshot vložen! (${sizeKB}KB)`, false);
                                         
                                         // Přepnout na text area pokud je prázdná
                                         if (!this.content.trim()) {
@@ -3046,14 +3046,14 @@
                                         // Fallback - použij nekomprimovaný
                                         this.selectedFile = event.target.result;
                                         this.setLoading(false);
-                                        this.showToast('📸 Screenshot vložen!', false);
+                                        this.showToast('Screenshot vložen!', false);
                                     }
                                 };
                                 
                                 reader.onerror = (error) => {
                                     console.error('❌ FileReader error při paste:', error);
                                     this.setLoading(false);
-                                    this.showToast('❌ Chyba při načítání obrázku', true);
+                                    this.showToast('Chyba při načítání obrázku', true);
                                 };
                                 
                                 reader.readAsDataURL(imageBlob);
@@ -3061,7 +3061,7 @@
                             } catch (error) {
                                 console.error('❌ Chyba při zpracování paste:', error);
                                 this.setLoading(false);
-                                this.showToast('❌ Nepodařilo se vložit obrázek', true);
+                                this.showToast('Nepodařilo se vložit obrázek', true);
                             }
                         }
                         // Pokud je text a NENÍ v input fieldu, naplň textarea
