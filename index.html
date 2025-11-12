@@ -261,7 +261,7 @@
             <div class="flex items-center justify-between h-14 sm:h-16">
                 <!-- Logo and Title -->
                 <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                    <div class="flex-shrink-0" role="img" aria-label="QRPaste logo">
+                    <a href="#" @click.prevent="view = 'home'; clearAll()" class="flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity" role="img" aria-label="QRPaste logo - návrat na homepage">
                         <svg class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <!-- Background clipboard -->
                             <rect x="15" y="10" width="70" height="85" rx="8" ry="8" fill="#1e3a8a" stroke="#1e3a8a" stroke-width="2"/>
@@ -331,10 +331,12 @@
                                 <rect x="46" y="42" width="2" height="2" fill="#1e3a8a"/>
                             </g>
                         </svg>
-                    </div>
+                    </a>
                     <div class="min-w-0">
-                        <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">QRPaste</h1>
-                        <p class="text-2xs sm:text-xs text-gray-500 hidden sm:block">Rychlé sdílení pro školy</p>
+                        <a href="#" @click.prevent="view = 'home'; clearAll()" class="block hover:opacity-80 transition-opacity">
+                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">QRPaste</h1>
+                            <p class="text-2xs sm:text-xs text-gray-500 hidden sm:block">Rychlé sdílení pro školy</p>
+                        </a>
                     </div>
                 </div>
                
@@ -430,7 +432,7 @@
                         <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-left">
                             <div class="text-3xl mb-2">🔤</div>
                             <h3 class="font-semibold text-green-900 mb-1">2. Zadej kód</h3>
-                            <p class="text-sm text-green-700">Nebo zapiš 6-znakový kód</p>
+                            <p class="text-sm text-green-700">Nebo zapiš 8-znakový kód</p>
                         </div>
                         
                         <div class="bg-purple-50 border-2 border-purple-200 rounded-lg p-4 text-left">
@@ -451,7 +453,7 @@
                         <input
                             type="text"
                             x-model="viewCode"
-                            placeholder="Zadejte kód (např. ABC123)"
+                            placeholder="Zadejte kód (např. ge9rg4t2)"
                             class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 uppercase text-lg font-mono text-center"
                             aria-label="Kód pro zobrazení obsahu"
                             @keydown.enter="viewByCode"
