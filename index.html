@@ -1071,77 +1071,6 @@
     </div>
 
 
-    <!-- Camera Modal -->
-    <div
-        x-show="cameraMode"
-        x-transition
-        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-        @keydown.escape="closeCameraModal"
-        x-cloak
-    >
-        <div class="bg-white rounded-lg max-w-md w-full p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Vyfotit obrázek</h3>
-                <button
-                    @click="closeCameraModal"
-                    class="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    aria-label="Zavřít kameru"
-                >
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-           
-            <!-- Camera Video -->
-            <div class="relative mb-4">
-                <video
-                    x-ref="cameraVideo"
-                    autoplay
-                    playsinline
-                    class="w-full h-64 bg-gray-900 rounded-lg object-cover"
-                ></video>
-               
-                <!-- Camera not available message -->
-                <div x-show="!cameraAvailable" class="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                    <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                        </svg>
-                        <p class="text-sm text-gray-600">Kamera není dostupná</p>
-                        <p class="text-xs text-gray-500 mt-1">Povolte přístup k kameře v prohlížeči</p>
-                    </div>
-                </div>
-            </div>
-           
-            <!-- Camera Controls -->
-            <div class="flex justify-center space-x-3">
-                <button
-                    @click="capturePhoto"
-                    :disabled="!cameraAvailable"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Vyfotit
-                </button>
-               
-                <button
-                    @click="closeCameraModal"
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-                >
-                    Zrušit
-                </button>
-            </div>
-           
-            <!-- Hidden canvas for photo capture -->
-            <canvas x-ref="cameraCanvas" class="hidden"></canvas>
-        </div>
-    </div>
-
-
     <!-- ============================================
          TV REŽIM (FULLSCREEN)
          Zobrazí obsah na celou obrazovku
@@ -3433,29 +3362,11 @@
          x-transition:leave-end="opacity-0 scale-95"
          class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
          @keydown.escape.window="closeCameraModal"
-         @keydown.tab.prevent="
-            const focusable = $el.querySelectorAll('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])');
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if ($event.shiftKey && document.activeElement === first) {
-                last.focus();
-            } else if (!$event.shiftKey && document.activeElement === last) {
-                first.focus();
-            }
-         "
          x-cloak
          role="dialog"
          aria-modal="true"
          aria-labelledby="camera-modal-title"
-         aria-describedby="camera-modal-description"
-         x-init="$watch('cameraMode', value => {
-            if (value) {
-                $nextTick(() => {
-                    const closeBtn = $el.querySelector('button[aria-label*=\"Zavřít\"]');
-                    if (closeBtn) closeBtn.focus();
-                });
-            }
-         })">
+         aria-describedby="camera-modal-description">
         <div class="bg-white rounded-lg max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto focus-trap">
             <div class="flex items-center justify-between mb-4">
                 <h3 id="camera-modal-title" class="text-lg font-medium text-gray-900">Vyfotit obrázek</h3>
