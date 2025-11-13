@@ -1,0 +1,41 @@
+# Render.com Blueprint pro QRPaste
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Web Service - QRPaste aplikace
+  - type: web
+    name: qrpaste
+    env: docker
+    region: frankfurt  # Změň na nejbližší region (frankfurt, oregon, singapore)
+    plan: free  # free, starter, standard, pro
+    dockerfilePath: ./Dockerfile
+    
+    # Environment proměnné
+    envVars:
+      - key: QRPASTE_SECRET
+        generateValue: true  # Automaticky vygeneruje náhodný secret
+      
+      - key: PHP_MEMORY_LIMIT
+        value: 128M
+      
+      - key: PHP_UPLOAD_MAX_FILESIZE
+        value: 10M
+      
+      - key: PHP_POST_MAX_SIZE
+        value: 11M
+    
+    # Automatické nasazení z Gitu
+    autoDeploy: true
+    
+    # Disk pro persistentní SQLite databázi
+    disk:
+      name: qrpaste-data
+      mountPath: /var/www/html/data
+      sizeGB: 1  # 1GB free tier limit
+    
+    # Health check
+    healthCheckPath: /
+    
+    # Custom domain (volitelné)
+    # domains:
+    #   - qrpaste.yourdomain.com
